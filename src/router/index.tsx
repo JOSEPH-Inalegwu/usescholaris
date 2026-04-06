@@ -1,9 +1,10 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
+import LoginPage from '../pages/auth/Login';
+import RegisterPage from '../pages/auth/Register';
 
 // Simple placeholder components for pages
-const Login = () => <div className="p-4">Login Page</div>;
-const Register = () => <div className="p-4">Register Page</div>;
+
 const OnboardingLevel = () => <div className="p-4">Onboarding Level Page</div>;
 const OnboardingDepartment = () => <div className="p-4">Onboarding Department Page</div>;
 const OnboardingComplete = () => <div className="p-4">Onboarding Complete Page</div>;
@@ -21,11 +22,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/login',
-    element: <Login />,
+    element: <LoginPage />,
   },
   {
     path: '/register',
-    element: <Register />,
+    element: <RegisterPage />,
   },
   {
     path: '/onboarding/level',
