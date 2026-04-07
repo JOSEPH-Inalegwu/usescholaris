@@ -23,7 +23,7 @@ export default function Dashboard() {
         <div className="mt-16 p-8 grid grid-cols-12 gap-8 flex-1">
           {/* Left Column */}
           <div className="col-span-8 space-y-8">
-            <GreetingHeader userName="Dr. Julian Vane" />
+            <GreetingHeader />
             <ActiveSessionHero />
             <StatsGrid />
             <ActivityFeed />
