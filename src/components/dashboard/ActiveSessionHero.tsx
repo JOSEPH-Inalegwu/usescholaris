@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, onSnapshot, updateDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, serverTimestamp, collection, addDoc, increment } from 'firebase/firestore';
 import { db } from '../../lib/firebase/firebase';
 import { useAuth } from '../../hooks';
 import { HeroSkeleton } from '../ui';
@@ -42,7 +42,7 @@ const ActiveSessionHero: React.FC = () => {
         const duration = 60 * 60 * 1000;
         const elapsed = now - startTime;
         const remaining = Math.max(0, duration - elapsed);
-        
+
         const mins = Math.floor(remaining / 60000);
         const secs = Math.floor((remaining % 60000) / 1000);
         setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
@@ -65,24 +65,47 @@ const ActiveSessionHero: React.FC = () => {
   };
 
   const completeSession = async () => {
-    if (!user) return;
-    try {
-      // 1. Add session record to subcollection
-      await addDoc(collection(db, 'users', user.uid, 'sessions'), {
-        completedAt: serverTimestamp(),
-        courseName: session?.courseName,
-        postExamNote: `Excellent work session for ${session?.courseName || 'your course'}. Ensure you review the key concepts before your next exam.`
-      });
+    if (!user || !session?.startedAt) return;
 
-      // 2. Clear current session state
-      await updateDoc(doc(db, 'users', user.uid), {
-        currentSession: {
-          status: 'completed',
-          courseName: session?.courseName,
-          postExamNote: `Excellent work session for ${session?.courseName || 'your course'}. Ensure you review the key concepts before your next exam.`,
-          updatedAt: serverTimestamp()
-        }
-      });
+    try {
+      // Calculate actual duration in minutes
+      const startTime = session.startedAt.toDate().getTime();
+      const now = new Date().getTime();
+      const durationMs = now - startTime;
+      const durationMinutes = Math.floor(durationMs / 60000);
+
+      // Only record if duration is > 1 minute
+      if (durationMinutes >= 1) {
+        const durationHours = durationMinutes / 60;
+
+        // 1. Add session record to subcollection
+        await addDoc(collection(db, 'users', user.uid, 'sessions'), {
+          completedAt: serverTimestamp(),
+          courseName: session?.courseName || 'General Studies',
+          durationMinutes,
+          postExamNote: `Excellent work session for ${session?.courseName || 'your course'}. Ensure you review the key concepts before your next exam.`
+        });
+
+        // 2. Clear current session state and increment total study hours
+        await updateDoc(doc(db, 'users', user.uid), {
+          currentSession: {
+            status: 'completed',
+            courseName: session?.courseName,
+            postExamNote: `Excellent work session for ${session?.courseName || 'your course'}. Ensure you review the key concepts before your next exam.`,
+            updatedAt: serverTimestamp()
+          },
+          totalStudyHours: increment(durationHours)
+        });
+      } else {
+        // Clear the session if it was too short (ghost session)
+        await updateDoc(doc(db, 'users', user.uid), {
+          currentSession: {
+            status: 'none',
+            updatedAt: serverTimestamp()
+          }
+        });
+        console.log('[ActiveSessionHero] Ghost session discarded (< 1 min)');
+      }
     } catch (err) {
       console.error('Error completing session:', err);
     }
