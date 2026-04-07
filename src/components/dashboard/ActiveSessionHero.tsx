@@ -123,7 +123,7 @@ const ActiveSessionHero: React.FC = () => {
         transition={{ duration: 0.5 }}
       >
         {(!session || session.status === 'none') && (
-          <section className="rounded-xl bg-[#ebeeef] text-[#5a6061] p-10 min-h-[320px] flex flex-col justify-center items-center text-center">
+          <section className="rounded-xl bg-[#ebeeef] text-[#5a6061] p-6 lg:p-10 min-h-[320px] flex flex-col justify-center items-center text-center">
             <h2 className="text-2xl font-extrabold mb-4 font-['Lora'] text-[#2d3435]">No Active Study Session</h2>
             <p className="mb-8 max-w-sm">Track your progress for {profile?.department || 'your studies'}.</p>
             <button onClick={startSession} className="bg-[#2d3435] text-white px-8 py-3 rounded-lg font-bold text-sm uppercase tracking-widest hover:bg-[#b32839] transition-all">Start New Session</button>
@@ -131,7 +131,7 @@ const ActiveSessionHero: React.FC = () => {
         )}
 
         {session?.status === 'completed' && (
-          <section className="rounded-xl bg-[#5f5e5e] text-white p-10 min-h-[320px] flex flex-col justify-between">
+          <section className="rounded-xl bg-[#5f5e5e] text-white p-6 lg:p-10 min-h-[320px] flex flex-col justify-between">
             <div>
               <h2 className="text-2xl font-extrabold mb-4 font-['Lora']">Session Summary</h2>
               <p className="text-white/80">Great work! You've completed your study block.</p>
@@ -147,7 +147,7 @@ const ActiveSessionHero: React.FC = () => {
         )}
 
         {session?.status === 'active' && (
-          <section className="relative overflow-hidden rounded-xl bg-[#5f5e5e] text-white p-10 min-h-[320px] flex flex-col justify-between">
+          <section className="relative overflow-hidden rounded-xl bg-[#5f5e5e] text-white p-6 lg:p-10 min-h-[320px] flex flex-col justify-between">
             <div className="relative z-10">
               <div className="flex justify-between items-start">
                 <span className="inline-flex items-center gap-2 px-3 py-1 bg-[#b32839]/20 rounded-full text-[10px] font-bold tracking-[0.2em] text-white uppercase border border-[#b32839]/30 mb-6 font-['Lora']">
@@ -158,9 +158,9 @@ const ActiveSessionHero: React.FC = () => {
               <h2 className="text-4xl font-extrabold tracking-tighter mb-4 max-w-lg leading-tight font-['Lora']">Focus: {session.focusTopic}</h2>
               <p className="text-white/70 text-sm max-w-md leading-relaxed">Course: {session.courseName}. Keep up the great pace.</p>
             </div>
-            <div className="relative z-10 flex items-center gap-8 mt-8">
+            <div className="relative z-10 flex flex-wrap items-center gap-8 mt-8">
               <div><p className="text-[10px] uppercase tracking-widest text-white/50 mb-1 font-['Lora']">Time Remaining</p><p className="text-3xl font-light tracking-widest font-['Lora']">{timeLeft}</p></div>
-              <div className="h-10 w-px bg-white/20" />
+              <div className="hidden sm:block h-10 w-px bg-white/20" />
               <button onClick={completeSession} className="bg-white text-[#5f5e5e] px-8 py-3 rounded-lg font-bold text-sm uppercase tracking-widest hover:bg-[#b32839] hover:text-white transition-all active:scale-95 shadow-xl font-['Lora']">Finish Session</button>
             </div>
           </section>

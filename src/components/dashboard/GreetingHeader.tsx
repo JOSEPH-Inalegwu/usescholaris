@@ -8,7 +8,6 @@ const GreetingHeader: React.FC = () => {
   const greeting = useMemo(() => getTimeBasedGreeting(), []);
   const subtext = useMemo(() => getPersonalizedSubtext(), []);
   
-  // Prioritize Firestore name, then Google Auth name, then "Scholar"
   const displayName = profile?.name || user?.displayName || undefined;
   const firstName = useMemo(() => getFirstName(displayName), [displayName]);
 

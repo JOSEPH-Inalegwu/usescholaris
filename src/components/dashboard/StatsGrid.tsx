@@ -144,7 +144,7 @@ const StatsGrid: React.FC = () => {
                 <Link to="/leaderboard" className="text-[10px] font-bold text-[#b32839] uppercase tracking-widest hover:underline font-['Lora']">Global Standings</Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Derived Rank Card */}
                 <motion.div whileHover={{ y: -5 }} className="bg-[#b32839]/5 border border-[#b32839]/10 rounded-xl p-5 relative overflow-hidden group transition-all">
                     <p className="text-[10px] font-bold text-[#b32839] uppercase mb-3 font-['Lora'] tracking-widest">Dept. Rank</p>

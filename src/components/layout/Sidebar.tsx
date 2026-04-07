@@ -2,8 +2,15 @@ import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks';
 import { getFirstName } from '../../lib/utils';
+import { motion } from 'framer-motion';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  isDrawer?: boolean;
+  onClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, isDrawer, onClose }) => {
   const location = useLocation();
   const { profile, user, loading } = useAuth();
 
@@ -23,11 +30,18 @@ const Sidebar: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  return (
-    <aside className="flex flex-col h-screen py-8 bg-[#f2f4f4] w-64 fixed left-0 top-0 overflow-y-auto z-50 border-r border-transparent font-['Merriweather']">
-      <div className="px-6 mb-10">
-        <h1 className="text-xl font-bold tracking-tighter text-[#1A1A1A] uppercase font-['Lora']">Scholaris</h1>
-        <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a6061] font-medium mt-1 font-['Lora']">Elite Scholar Portal</p>
+  const sidebarContent = (
+    <div className={`flex flex-col h-full py-8 bg-[#f2f4f4] w-64 border-r border-transparent font-['Merriweather'] overflow-y-auto`}>
+      <div className="px-6 mb-10 flex justify-between items-center flex-shrink-0">
+        <div>
+          <h1 className="text-xl font-bold tracking-tighter text-[#1A1A1A] uppercase font-['Lora']">Scholaris</h1>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-[#5a6061] font-medium mt-1 font-['Lora']">Elite Scholar Portal</p>
+        </div>
+        {isDrawer && (
+          <button onClick={onClose} className="lg:hidden text-[#5a6061]">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 space-y-1">
@@ -35,6 +49,7 @@ const Sidebar: React.FC = () => {
           <Link
             key={item.path}
             to={item.path}
+            onClick={() => isDrawer && onClose?.()}
             className={`px-4 py-3 mx-4 rounded-lg flex items-center gap-3 transition-all active:scale-[0.98] ${isActive(item.path)
                 ? 'bg-[#ebeeef] text-[#5f5e5e] font-semibold'
                 : 'text-[#5a6061] hover:bg-[#ebeeef]/50'
@@ -83,6 +98,26 @@ const Sidebar: React.FC = () => {
           )}
         </div>
       </div>
+    </div>
+  );
+
+  if (isDrawer) {
+    return (
+      <motion.aside
+        initial={{ x: '-100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '-100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="fixed left-0 top-0 h-screen z-[70] lg:hidden"
+      >
+        {sidebarContent}
+      </motion.aside>
+    );
+  }
+
+  return (
+    <aside className="h-screen sticky top-0">
+      {sidebarContent}
     </aside>
   );
 };
