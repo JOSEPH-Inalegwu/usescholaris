@@ -5,9 +5,9 @@ import RegisterPage from '../pages/auth/Register';
 import LevelPage from '../pages/onboarding/Level';
 import DepartmentPage from '../pages/onboarding/Department';
 import CompletePage from '../pages/onboarding/Complete';
+import DashboardPage from '../pages/dashboard/Dashboard';
 
 // Simple placeholder components for other pages
-const Dashboard = () => <div className="p-4 font-['Lora']">Dashboard Page</div>;
 const Leaderboard = () => <div className="p-4 font-['Lora']">Leaderboard Page</div>;
 const CourseSelection = () => <div className="p-4 font-['Lora']">Questions: Course Selection Page</div>;
 const CourseQuestions = () => <div className="p-4 font-['Lora']">Questions: Specific Course Page</div>;
@@ -55,7 +55,7 @@ export const router = createBrowserRouter([
     path: '/dashboard',
     element: (
       <ProtectedRoute>
-        <Dashboard />
+        <DashboardPage />
       </ProtectedRoute>
     ),
   },
