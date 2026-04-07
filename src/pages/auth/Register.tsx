@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { auth, db } from '../../lib/firebase/firebase'
 import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore'
+import { doc, setDoc, serverTimestamp, getDoc, updateDoc } from 'firebase/firestore'
 import { useNavigate, Link } from 'react-router-dom'
 import { AuthLeftPanel } from '../../components/auth/AuthLeftPanel'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -39,7 +39,7 @@ export default function RegisterPage() {
             await updateProfile(userCredential.user, {
                 displayName: data.name
             })
-            
+
             // Create user document in Firestore
             await setDoc(doc(db, 'users', userCredential.user.uid), {
                 uid: userCredential.user.uid,
@@ -51,8 +51,9 @@ export default function RegisterPage() {
             })
 
             navigate('/onboarding/level')
-        } catch (err: any) {
-            const code = err?.code
+        } catch (err: unknown) {
+            const firebaseError = err as { code?: string; message?: string };
+            const code = firebaseError.code
             if (code === 'auth/email-already-in-use') {
                 setError('This email is already registered. Please sign in instead.')
             } else if (code === 'auth/invalid-email') {
@@ -60,7 +61,7 @@ export default function RegisterPage() {
             } else if (code === 'auth/weak-password') {
                 setError('Password is too weak.')
             } else {
-                setError(err.message || 'Something went wrong during registration.')
+                setError(firebaseError.message || 'Something went wrong during registration.')
             }
         } finally {
             setIsLoading(false)
@@ -73,38 +74,54 @@ export default function RegisterPage() {
         try {
             const provider = new GoogleAuthProvider()
             const result = await signInWithPopup(auth, provider)
-            
+            const { uid, displayName, email } = result.user
+
             // Check if user document exists
-            const userDoc = await getDoc(doc(db, 'users', result.user.uid))
-            
+            const userDocRef = doc(db, 'users', uid)
+            const userDoc = await getDoc(userDocRef)
+
             if (!userDoc.exists()) {
                 // Initial document for Google users
-                await setDoc(doc(db, 'users', result.user.uid), {
-                    uid: result.user.uid,
-                    name: result.user.displayName,
-                    email: result.user.email,
+                await setDoc(userDocRef, {
+                    uid,
+                    name: displayName,
+                    email,
                     createdAt: serverTimestamp(),
                     hasCompletedOnboarding: false,
                     onboardingStep: 0
                 })
                 navigate('/onboarding/level')
-            } else if (!userDoc.data().hasCompletedOnboarding) {
-                navigate('/onboarding/level')
             } else {
-                navigate('/dashboard')
+                const userData = userDoc.data()
+
+                // Sync name if missing from Firestore
+                if (!userData.name && displayName) {
+                    await updateDoc(userDocRef, { name: displayName })
+                }
+
+                if (!userData.hasCompletedOnboarding) {
+                    // Determine step
+                    const step = userData.onboardingStep || 0
+                    if (step === 0) navigate('/onboarding/level')
+                    else if (step === 1) navigate('/onboarding/department')
+                    else if (step === 2) navigate('/onboarding/complete')
+                    else navigate('/onboarding/level')
+                } else {
+                    navigate('/dashboard')
+                }
             }
-        } catch (err: any) {
-            const code = err?.code
+        } catch (err: unknown) {
+            const firebaseError = err as { code?: string; message?: string };
+            const code = firebaseError.code
             if (code === 'auth/popup-closed-by-user') {
                 setError('Sign in was cancelled.')
             } else {
-                setError(err.message || 'Failed to sign in with Google.')
+                setError(firebaseError.message || 'Failed to sign in with Google.')
             }
         } finally {
             setIsGoogleLoading(false)
         }
     }
-
     return (
         <div className="bg-[#f9f9f9] text-[#2d3435] antialiased overflow-hidden min-h-screen">
             <main className="min-h-screen flex flex-col md:flex-row bg-[#f9f9f9] text-[#2d3435] antialiased" style={{ fontFamily: 'Lora, serif' }}>

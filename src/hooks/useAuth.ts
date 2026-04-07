@@ -23,7 +23,7 @@ export const useAuth = () => {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
@@ -33,11 +33,15 @@ export const useAuth = () => {
             setProfile(null);
           }
           setLoading(false);
+        }, (error) => {
+          console.error("Error fetching user profile:", error);
+          setLoading(false);
         });
 
         return () => unsubscribeSnapshot();
       } else {
         setProfile(null);
+        setUser(null);
         setLoading(false);
       }
     });

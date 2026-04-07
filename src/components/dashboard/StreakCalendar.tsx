@@ -1,19 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  doc,
-  onSnapshot,
-  updateDoc,
-  serverTimestamp,
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  orderBy
-} from 'firebase/firestore';
+import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 import { db } from '../../lib/firebase/firebase';
 import { useAuth } from '../../hooks';
-
 const goldPalette = { primary: '#d4aa37ff', dark: '#cf6b19ff' };
 
 interface SessionRecord {

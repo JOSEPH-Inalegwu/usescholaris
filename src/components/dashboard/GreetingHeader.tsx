@@ -3,11 +3,23 @@ import { useAuth } from '../../hooks';
 import { getTimeBasedGreeting, getPersonalizedSubtext, getFirstName } from '../../lib/utils';
 
 const GreetingHeader: React.FC = () => {
-  const { profile } = useAuth();
+  const { profile, user, loading } = useAuth();
 
   const greeting = useMemo(() => getTimeBasedGreeting(), []);
   const subtext = useMemo(() => getPersonalizedSubtext(), []);
-  const firstName = useMemo(() => getFirstName(profile?.name), [profile?.name]);
+  
+  // Prioritize Firestore name, then Google Auth name, then "Scholar"
+  const displayName = profile?.name || user?.displayName || undefined;
+  const firstName = useMemo(() => getFirstName(displayName), [displayName]);
+
+  if (loading) {
+    return (
+      <header className="mb-10 animate-pulse">
+        <div className="h-9 w-64 bg-[#f2f4f4] rounded-lg mb-3" />
+        <div className="h-5 w-96 bg-[#f2f4f4] rounded-lg" />
+      </header>
+    );
+  }
 
   return (
     <header className="mb-10">

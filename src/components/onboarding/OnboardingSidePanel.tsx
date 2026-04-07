@@ -52,7 +52,7 @@ export const OnboardingSidePanel = ({ step, title, description }: OnboardingSide
 
                 {/* Visual Step Indicator */}
                 <div className="space-y-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#adb3b4]">Current Progress</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#adb3b4]">{description}</p>
                     <div className="flex gap-2 h-1.5 w-48">
                         {[1, 2, 3].map((s) => (
                             <div 

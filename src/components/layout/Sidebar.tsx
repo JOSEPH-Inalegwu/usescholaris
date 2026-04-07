@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks';
+import { getFirstName } from '../../lib/utils';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const { profile, user, loading } = useAuth();
+
+  const displayName = profile?.name || user?.displayName || undefined;
+  const firstName = useMemo(() => getFirstName(displayName), [displayName]);
+  const initials = useMemo(() => {
+    if (!displayName) return 'S';
+    return displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  }, [displayName]);
 
   const menuItems = [
     { path: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
@@ -47,16 +57,30 @@ const Sidebar: React.FC = () => {
         </button>
 
         <div className="mt-6 px-2 py-4 flex items-center gap-3 bg-[#f2f4f4]/50 rounded-xl">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-[#2d3435] flex items-center justify-center text-white font-bold text-sm">
-              JV
+          {loading ? (
+            <div className="flex items-center gap-3 w-full animate-pulse">
+              <div className="w-10 h-10 rounded-full bg-[#ebeeef]" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-[#ebeeef] rounded w-20" />
+                <div className="h-2 bg-[#ebeeef] rounded w-16" />
+              </div>
             </div>
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-[#b32839] border-2 border-[#f2f4f4] rounded-full" />
-          </div>
-          <div className="overflow-hidden">
-            <p className="text-sm font-bold truncate text-[#2d3435] font-['Lora']">Dr. Julian Vane</p>
-            <p className="text-[10px] text-[#5a6061] uppercase tracking-wider font-['Lora']">Fellow Scholar</p>
-          </div>
+          ) : (
+            <>
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-[#2d3435] flex items-center justify-center text-white font-bold text-sm">
+                  {initials}
+                </div>
+                {user && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#f2f4f4] rounded-full" />}
+              </div>
+              <div className="overflow-hidden">
+                <p className="text-sm font-bold truncate text-[#2d3435] font-['Lora']">{firstName}</p>
+                <p className="text-[10px] text-[#5a6061] uppercase tracking-wider font-['Lora']">
+                  {profile?.level || 'Scholar'}
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </aside>

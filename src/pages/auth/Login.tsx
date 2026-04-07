@@ -4,10 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { auth, db } from '../../lib/firebase/firebase'
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth'
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { useNavigate, Link } from 'react-router-dom'
 import { AuthLeftPanel } from '../../components/auth/AuthLeftPanel'
 import { motion, AnimatePresence } from 'framer-motion'
+import type { User } from 'firebase/auth'
 
 const loginSchema = z.object({
     email: z.string().email('Please enter a valid email'),
@@ -26,10 +27,19 @@ export default function LoginPage() {
         resolver: zodResolver(loginSchema),
     })
 
-    const checkOnboardingAndNavigate = async (uid: string) => {
-        const userDoc = await getDoc(doc(db, 'users', uid))
+    const checkOnboardingAndNavigate = async (user: User) => {
+        const { uid, displayName, email } = user
+        const userDocRef = doc(db, 'users', uid)
+        const userDoc = await getDoc(userDocRef)
+
         if (userDoc.exists()) {
             const userData = userDoc.data()
+
+            // Sync name if missing from Firestore but exists in Auth
+            if (!userData.name && displayName) {
+                await updateDoc(userDocRef, { name: displayName })
+            }
+
             if (userData.hasCompletedOnboarding) {
                 navigate('/dashboard')
             } else {
@@ -41,9 +51,11 @@ export default function LoginPage() {
                 else navigate('/onboarding/level')
             }
         } else {
-            // Document doesn't exist but user authenticated (shouldn't happen with email register, but maybe google)
-            await setDoc(doc(db, 'users', uid), {
+            // New user (e.g., via Google)
+            await setDoc(userDocRef, {
                 uid,
+                name: displayName,
+                email,
                 hasCompletedOnboarding: false,
                 onboardingStep: 0,
                 createdAt: serverTimestamp()
@@ -57,9 +69,10 @@ export default function LoginPage() {
         setError(null)
         try {
             const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password)
-            await checkOnboardingAndNavigate(userCredential.user.uid)
-        } catch (err: any) {
-            const code = err?.code
+            await checkOnboardingAndNavigate(userCredential.user)
+        } catch (err: unknown) {
+            const firebaseError = err as { code?: string; message?: string };
+            const code = firebaseError.code
             if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
                 setError('No account found with these credentials. Please check your details or create an account.')
             } else if (code === 'auth/invalid-email') {
@@ -67,7 +80,7 @@ export default function LoginPage() {
             } else if (code === 'auth/too-many-requests') {
                 setError('Too many attempts. Please wait a few minutes and try again.')
             } else {
-                setError(err.message || 'Something went wrong. Please try again.')
+                setError(firebaseError.message || 'Something went wrong. Please try again.')
             }
         } finally {
             setIsLoading(false)
@@ -80,15 +93,16 @@ export default function LoginPage() {
         try {
             const provider = new GoogleAuthProvider()
             const result = await signInWithPopup(auth, provider)
-            await checkOnboardingAndNavigate(result.user.uid)
-        } catch (err: any) {
-            const code = err?.code
+            await checkOnboardingAndNavigate(result.user)
+        } catch (err: unknown) {
+            const firebaseError = err as { code?: string; message?: string };
+            const code = firebaseError.code
             if (code === 'auth/popup-closed-by-user') {
                 setError('Sign in was cancelled.')
             } else if (code === 'auth/too-many-requests') {
                 setError('Too many attempts. Please wait a few minutes and try again.')
             } else {
-                setError(err.message || 'Failed to sign in with Google.')
+                setError(firebaseError.message || 'Failed to sign in with Google.')
             }
         } finally {
             setIsGoogleLoading(false)
