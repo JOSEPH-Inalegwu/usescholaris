@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { auth } from '../../lib/firebase/firebase'
+import { auth, db } from '../../lib/firebase/firebase'
 import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore'
 import { useNavigate, Link } from 'react-router-dom'
 import { AuthLeftPanel } from '../../components/auth/AuthLeftPanel'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -38,7 +39,18 @@ export default function RegisterPage() {
             await updateProfile(userCredential.user, {
                 displayName: data.name
             })
-            navigate('/dashboard')
+            
+            // Create user document in Firestore
+            await setDoc(doc(db, 'users', userCredential.user.uid), {
+                uid: userCredential.user.uid,
+                name: data.name,
+                email: data.email,
+                createdAt: serverTimestamp(),
+                hasCompletedOnboarding: false,
+                onboardingStep: 0
+            })
+
+            navigate('/onboarding/level')
         } catch (err: any) {
             const code = err?.code
             if (code === 'auth/email-already-in-use') {
@@ -60,8 +72,27 @@ export default function RegisterPage() {
         setError(null)
         try {
             const provider = new GoogleAuthProvider()
-            await signInWithPopup(auth, provider)
-            navigate('/dashboard')
+            const result = await signInWithPopup(auth, provider)
+            
+            // Check if user document exists
+            const userDoc = await getDoc(doc(db, 'users', result.user.uid))
+            
+            if (!userDoc.exists()) {
+                // Initial document for Google users
+                await setDoc(doc(db, 'users', result.user.uid), {
+                    uid: result.user.uid,
+                    name: result.user.displayName,
+                    email: result.user.email,
+                    createdAt: serverTimestamp(),
+                    hasCompletedOnboarding: false,
+                    onboardingStep: 0
+                })
+                navigate('/onboarding/level')
+            } else if (!userDoc.data().hasCompletedOnboarding) {
+                navigate('/onboarding/level')
+            } else {
+                navigate('/dashboard')
+            }
         } catch (err: any) {
             const code = err?.code
             if (code === 'auth/popup-closed-by-user') {
@@ -82,7 +113,7 @@ export default function RegisterPage() {
                 <AuthLeftPanel />
 
                 {/* Right Section — 50% */}
-                <section className="w-full md:w-1/2 bg-white flex items-center justify-center p-10 md:p-16 min-h-screen relative shadow-xl z-10 overflow-y-auto">
+                <section className="w-full md:w-1/2 bg-white flex items-center justify-center p-10 md:p-16 min-h-screen relative shadow-2xl z-10 overflow-y-auto">
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}

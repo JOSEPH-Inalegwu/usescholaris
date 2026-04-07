@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { auth } from '../../lib/firebase/firebase'
+import { auth, db } from '../../lib/firebase/firebase'
 import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { useNavigate, Link } from 'react-router-dom'
 import { AuthLeftPanel } from '../../components/auth/AuthLeftPanel'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -25,12 +26,38 @@ export default function LoginPage() {
         resolver: zodResolver(loginSchema),
     })
 
+    const checkOnboardingAndNavigate = async (uid: string) => {
+        const userDoc = await getDoc(doc(db, 'users', uid))
+        if (userDoc.exists()) {
+            const userData = userDoc.data()
+            if (userData.hasCompletedOnboarding) {
+                navigate('/dashboard')
+            } else {
+                // Determine step
+                const step = userData.onboardingStep || 0
+                if (step === 0) navigate('/onboarding/level')
+                else if (step === 1) navigate('/onboarding/department')
+                else if (step === 2) navigate('/onboarding/complete')
+                else navigate('/onboarding/level')
+            }
+        } else {
+            // Document doesn't exist but user authenticated (shouldn't happen with email register, but maybe google)
+            await setDoc(doc(db, 'users', uid), {
+                uid,
+                hasCompletedOnboarding: false,
+                onboardingStep: 0,
+                createdAt: serverTimestamp()
+            })
+            navigate('/onboarding/level')
+        }
+    }
+
     const onSubmit = async (data: LoginInput) => {
         setIsLoading(true)
         setError(null)
         try {
-            await signInWithEmailAndPassword(auth, data.email, data.password)
-            navigate('/dashboard')
+            const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password)
+            await checkOnboardingAndNavigate(userCredential.user.uid)
         } catch (err: any) {
             const code = err?.code
             if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
@@ -52,8 +79,8 @@ export default function LoginPage() {
         setError(null)
         try {
             const provider = new GoogleAuthProvider()
-            await signInWithPopup(auth, provider)
-            navigate('/dashboard')
+            const result = await signInWithPopup(auth, provider)
+            await checkOnboardingAndNavigate(result.user.uid)
         } catch (err: any) {
             const code = err?.code
             if (code === 'auth/popup-closed-by-user') {
@@ -76,7 +103,7 @@ export default function LoginPage() {
                 <AuthLeftPanel />
 
                 {/* Right Section — 50% */}
-                <section className="w-full md:w-1/2 bg-white flex items-center justify-center p-10 md:p-16 min-h-screen relative shadow-xl z-10">
+                <section className="w-full md:w-1/2 bg-white flex items-center justify-center p-10 md:p-16 min-h-screen relative shadow-2xl z-10">
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -95,7 +122,7 @@ export default function LoginPage() {
                             type="button"
                             onClick={handleGoogleSignIn}
                             disabled={isGoogleLoading || isLoading}
-                            className="w-full flex items-center justify-center gap-3 px-5 py-4 border border-[#dde4e5] rounded-sm hover:bg-[#f9f9f9] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed group shadow-sm"
+                            className="w-full flex items-center justify-center gap-3 px-5 py-4 border border-[#dde4e5] rounded-lg hover:bg-[#f9f9f9] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed group shadow-sm"
                         >
                             {isGoogleLoading ? (
                                 <svg className="animate-spin w-5 h-5 text-[#5a6061]" fill="none" viewBox="0 0 24 24">
@@ -140,15 +167,15 @@ export default function LoginPage() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                             <div className="space-y-1.5">
                                 <label className="block text-[11px] font-bold text-[#5a6061] uppercase tracking-widest ml-1" htmlFor="email">
-                                    Email
+                                    Institutional Email
                                 </label>
                                 <input
                                     id="email"
                                     type="email"
-                                    placeholder="johndoe@gmail.com"
+                                    placeholder="scholar@university.edu"
                                     {...register('email')}
                                     disabled={isLoading || isGoogleLoading}
-                                    className="w-full px-4 py-3 bg-[#f9f9f9] border border-[#dde4e5] rounded-sm focus:outline-none focus:ring-2 focus:ring-[#2d3435]/10 focus:bg-white transition-all text-sm text-[#2d3435] placeholder:text-[#adb3b4]/60 disabled:opacity-60"
+                                    className="w-full px-4 py-3 bg-[#f9f9f9] border border-[#dde4e5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2d3435]/10 focus:bg-white transition-all text-sm text-[#2d3435] placeholder:text-[#adb3b4]/60 disabled:opacity-60"
                                 />
                                 {errors.email && <p className="text-xs text-red-600 ml-1">{errors.email.message}</p>}
                             </div>
@@ -166,7 +193,7 @@ export default function LoginPage() {
                                     placeholder="••••••••"
                                     {...register('password')}
                                     disabled={isLoading || isGoogleLoading}
-                                    className="w-full px-4 py-3 bg-[#f9f9f9] border border-[#dde4e5] rounded-sm focus:outline-none focus:ring-2 focus:ring-[#2d3435]/10 focus:bg-white transition-all text-sm text-[#2d3435] placeholder:text-[#adb3b4]/60 disabled:opacity-60"
+                                    className="w-full px-4 py-3 bg-[#f9f9f9] border border-[#dde4e5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2d3435]/10 focus:bg-white transition-all text-sm text-[#2d3435] placeholder:text-[#adb3b4]/60 disabled:opacity-60"
                                 />
                                 {errors.password && <p className="text-xs text-red-600 ml-1">{errors.password.message}</p>}
                             </div>
@@ -176,7 +203,7 @@ export default function LoginPage() {
                                 whileTap={{ scale: 0.99 }}
                                 type="submit"
                                 disabled={isLoading || isGoogleLoading}
-                                className="w-full bg-[#2d3435] text-white py-4 rounded-sm text-sm font-bold hover:bg-[#1a1f20] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
+                                className="w-full bg-[#2d3435] text-white py-4 rounded-lg text-sm font-bold shadow-sm hover:bg-[#1a1f20] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
                             >
                                 {isLoading ? (
                                     <>

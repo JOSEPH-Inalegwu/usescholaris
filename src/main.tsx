@@ -3,9 +3,12 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import './styles/index.css'
 import { router } from './router'
+import { OnboardingProvider } from './context/OnboardingContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <OnboardingProvider>
+      <RouterProvider router={router} />
+    </OnboardingProvider>
   </StrictMode>,
 )
