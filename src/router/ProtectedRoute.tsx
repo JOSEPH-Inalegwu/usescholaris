@@ -59,7 +59,14 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#f9f9f9]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2d3435]"></div>
+        <div className="relative flex items-center justify-center">
+          <div className="absolute w-16 h-16 border-2 border-[#f27438] border-t-transparent rounded-full animate-spin"></div>
+          <img
+            src="/favicon.png"
+            alt="Loading..."
+            className="w-8 h-8 opacity-90"
+          />
+        </div>
       </div>
     );
   }

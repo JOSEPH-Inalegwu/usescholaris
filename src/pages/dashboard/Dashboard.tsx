@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Sidebar } from '../../components/layout'
 import {
   TopAppBar,
@@ -9,8 +10,28 @@ import {
   StreakCalendar,
   UpcomingEvents
 } from '../../components/dashboard'
+import { DashboardSkeleton } from '../../components/ui'
 
 export default function Dashboard() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial data fetching
+    const timer = setTimeout(() => setIsLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="bg-[#f9f9f9] min-h-screen">
+        <Sidebar />
+        <main className="ml-64 min-h-screen p-8 mt-16">
+          <DashboardSkeleton />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#f9f9f9] text-[#2d3435] min-h-screen font-['Merriweather']">
       <Sidebar />
