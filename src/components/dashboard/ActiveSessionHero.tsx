@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase/firebase';
 import { useAuth } from '../../hooks';
 import { HeroSkeleton } from '../ui';
@@ -66,14 +66,26 @@ const ActiveSessionHero: React.FC = () => {
 
   const completeSession = async () => {
     if (!user) return;
-    await updateDoc(doc(db, 'users', user.uid), {
-      currentSession: {
-        status: 'completed',
+    try {
+      // 1. Add session record to subcollection
+      await addDoc(collection(db, 'users', user.uid, 'sessions'), {
+        completedAt: serverTimestamp(),
         courseName: session?.courseName,
-        postExamNote: `Excellent work session for ${session?.courseName || 'your course'}. Ensure you review the key concepts before your next exam.`,
-        updatedAt: serverTimestamp()
-      }
-    });
+        postExamNote: `Excellent work session for ${session?.courseName || 'your course'}. Ensure you review the key concepts before your next exam.`
+      });
+
+      // 2. Clear current session state
+      await updateDoc(doc(db, 'users', user.uid), {
+        currentSession: {
+          status: 'completed',
+          courseName: session?.courseName,
+          postExamNote: `Excellent work session for ${session?.courseName || 'your course'}. Ensure you review the key concepts before your next exam.`,
+          updatedAt: serverTimestamp()
+        }
+      });
+    } catch (err) {
+      console.error('Error completing session:', err);
+    }
   };
 
   if (loading) return <HeroSkeleton />;
