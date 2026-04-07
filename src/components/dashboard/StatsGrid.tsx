@@ -36,7 +36,7 @@ const StatsGrid: React.FC = () => {
     const [sessions, setSessions] = useState<SessionRecord[]>([]);
     const [cohort, setCohort] = useState<any[]>([]);
     const [userDocData, setUserDocData] = useState<any>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [_isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (!user) return;

@@ -10,7 +10,7 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, isDrawer, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose }) => {
   const location = useLocation();
   const { profile, user, loading } = useAuth();
 
@@ -51,8 +51,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, isDrawer, onClose }) => {
             to={item.path}
             onClick={() => isDrawer && onClose?.()}
             className={`px-4 py-3 mx-4 rounded-lg flex items-center gap-3 transition-all active:scale-[0.98] ${isActive(item.path)
-                ? 'bg-[#ebeeef] text-[#5f5e5e] font-semibold'
-                : 'text-[#5a6061] hover:bg-[#ebeeef]/50'
+              ? 'bg-[#ebeeef] text-[#5f5e5e] font-semibold'
+              : 'text-[#5a6061] hover:bg-[#ebeeef]/50'
               }`}
           >
             <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
