@@ -116,11 +116,10 @@ const ActiveSessionHero: React.FC = () => {
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={session?.status || 'none'}
-        initial={{ rotateX: -90, opacity: 0 }}
-        animate={{ rotateX: 0, opacity: 1 }}
-        exit={{ rotateX: 90, opacity: 0 }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -10, scale: 0.98 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
       >
         {(!session || session.status === 'none') && (
           <section className="rounded-xl bg-[#ebeeef] text-[#5a6061] p-6 lg:p-10 min-h-[320px] flex flex-col justify-center items-center text-center">

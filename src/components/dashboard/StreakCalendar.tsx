@@ -28,24 +28,28 @@ const StreakCalendar: React.FC = () => {
 
       snapshot.docs.forEach(doc => {
         const data = doc.data();
-        const date = data.completedAt?.toDate().toISOString().split('T')[0];
+        const date = data.completedAt?.toDate().toLocaleDateString('en-CA');
         if (date) {
           history.push({ id: doc.id, date, completedAt: data.completedAt });
           sessionDates[date] = (sessionDates[date] || 0) + 1;
         }
       });
 
-      // Calculate Streak
+      // Calculate Streak using calendar days
       let currentStreak = 0;
       let d = new Date();
-      while (true) {
-        const dateStr = d.toISOString().split('T')[0];
-        if (sessionDates[dateStr]) {
-          currentStreak++;
-          d.setDate(d.getDate() - 1);
-        } else {
-          break;
-        }
+      let dateStr = d.toLocaleDateString('en-CA');
+
+      // If no session today, check if there was one yesterday to keep the streak active in the UI
+      if (!sessionDates[dateStr]) {
+        d.setDate(d.getDate() - 1);
+        dateStr = d.toLocaleDateString('en-CA');
+      }
+
+      while (sessionDates[dateStr]) {
+        currentStreak++;
+        d.setDate(d.getDate() - 1);
+        dateStr = d.toLocaleDateString('en-CA');
       }
 
       setSessionHistory(history);
@@ -61,7 +65,7 @@ const StreakCalendar: React.FC = () => {
     for (let i = 13; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      days.push(d.toISOString().split('T')[0]);
+      days.push(d.toLocaleDateString('en-CA'));
     }
     return days;
   }, []);
