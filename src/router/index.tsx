@@ -6,11 +6,40 @@ import LevelPage from '../pages/onboarding/Level';
 import DepartmentPage from '../pages/onboarding/Department';
 import CompletePage from '../pages/onboarding/Complete';
 import DashboardPage from '../pages/dashboard/Dashboard';
+import QuestionsPage from '../pages/questions';
+
+import { useParams } from 'react-router-dom';
 
 // Simple placeholder components for other pages
 const Leaderboard = () => <div className="p-4 font-['Lora']">Leaderboard Page</div>;
-const CourseSelection = () => <div className="p-4 font-['Lora']">Questions: Course Selection Page</div>;
 const CourseQuestions = () => <div className="p-4 font-['Lora']">Questions: Specific Course Page</div>;
+const ExamPage = () => {
+  const { courseSlug } = useParams();
+  return (
+    <div className="min-h-screen bg-[#f9f9f9] p-8 font-['Lora'] flex items-center justify-center">
+      <div className="max-w-4xl w-full bg-white border border-[#adb3b4]/20 rounded-sm p-12 shadow-sm text-center">
+        <div className="inline-block px-3 py-1 bg-[#b32839] text-white text-[10px] font-bold rounded-sm mb-6 uppercase tracking-widest">
+          Ranked Session Live
+        </div>
+        <h1 className="text-4xl font-bold text-[#2a2d2e] uppercase mb-4 tracking-tight">
+          Exam Session: {courseSlug}
+        </h1>
+        <p className="text-[#757c7d] text-lg max-w-lg mx-auto leading-relaxed">
+          The evaluation environment is being initialized. Please maintain focus and avoid switching tabs.
+        </p>
+        <div className="mt-12 flex justify-center gap-4">
+          <div className="h-1.5 w-24 bg-[#f2f4f4] rounded-sm overflow-hidden">
+            <motion.div 
+              className="h-full bg-[#d4aa37]"
+              animate={{ x: ['-100%', '100%'] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 const Profile = () => <div className="p-4 font-['Lora']">Profile Page</div>;
 const NotFound = () => <div className="p-4 font-['Lora']">404 Not Found</div>;
 
@@ -71,7 +100,7 @@ export const router = createBrowserRouter([
     path: '/questions',
     element: (
       <ProtectedRoute>
-        <CourseSelection />
+        <QuestionsPage />
       </ProtectedRoute>
     ),
   },
@@ -80,6 +109,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <CourseQuestions />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/exam/:courseSlug',
+    element: (
+      <ProtectedRoute>
+        <ExamPage />
       </ProtectedRoute>
     ),
   },
