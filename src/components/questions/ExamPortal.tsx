@@ -86,12 +86,27 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
         const prevDate = profile?.stats?.lastActivityDate;
         const isFullExam = Object.keys(finalAnswers).length === questions.length;
         
+        const pct = (score / questions.length) * 100;
+        let note = "";
+        if (pct < 50) note = "Good attempt! Let's focus on reviewing the key concepts before jumping back in. You've got this!";
+        else if (pct <= 80) note = "Strong performance! You're building solid momentum. A few more rounds and you'll be at the top.";
+        else note = "Elite level! You've mastered this course's core. Ready to take on something new?";
+
         let updatePayload: any = {
           'stats.totalPoints': increment(score),
           'stats.totalQuestions': increment(questions.length),
           'stats.totalTime': increment(duration),
           'stats.totalAttempts': increment(1),
           [`stats.activityLog.${todayStr}`]: increment(questions.length),
+          [`stats.courseActivity.${session.courseSlug}`]: increment(questions.length),
+          'currentSession': {
+            status: 'completed',
+            courseName: session.courseSlug.toUpperCase(),
+            score,
+            total: questions.length,
+            postExamNote: note,
+            updatedAt: serverTimestamp()
+          }
         };
 
         if (isFullExam) {

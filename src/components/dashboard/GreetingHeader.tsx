@@ -7,7 +7,7 @@ const GreetingHeader: React.FC = () => {
 
   const greeting = useMemo(() => getTimeBasedGreeting(), []);
   const subtext = useMemo(() => getPersonalizedSubtext(), []);
-  
+
   const displayName = profile?.name || user?.displayName || undefined;
   const firstName = useMemo(() => getFirstName(displayName), [displayName]);
 
@@ -21,7 +21,7 @@ const GreetingHeader: React.FC = () => {
   }
 
   return (
-    <header className="mb-10">
+    <header className="mb-10 lg:mt-10">
       <h2 className="text-3xl font-extrabold tracking-tight text-[#2d3435] font-['Lora']">
         {greeting}, <span className="text-[#535252]">{firstName}.</span>
       </h2>

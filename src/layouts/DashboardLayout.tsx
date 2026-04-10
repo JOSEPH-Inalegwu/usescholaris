@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Sidebar } from '../components/layout';
-import { TopAppBar } from '../components/dashboard';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface DashboardLayoutProps {
@@ -38,10 +37,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       </AnimatePresence>
 
       <main className="flex-1 min-h-screen relative flex flex-col min-w-0">
-        {/* Pass the toggle function directly to TopAppBar */}
-        <TopAppBar onMenuOpen={() => setIsSidebarOpen(true)} />
+        {/* Floating Hamburger for Mobile - now that TopAppBar is gone */}
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="lg:hidden fixed top-4 left-4 p-3 rounded-full bg-white/80 backdrop-blur-md shadow-sm border border-[#adb3b4]/20 z-[40] hover:bg-[#ebeeef] transition-colors"
+          style={{ color: '#d4aa37ff' }}
+        >
+          <span className="material-symbols-outlined text-2xl">menu</span>
+        </button>
         
-        <div className="mt-16 p-4 md:p-8 flex-1 overflow-x-hidden">
+        <div className="pt-20 lg:pt-8 p-4 md:p-8 flex-1 overflow-x-hidden">
           {children}
         </div>
       </main>

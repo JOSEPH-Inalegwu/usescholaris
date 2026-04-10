@@ -4,10 +4,8 @@ import {
   GreetingHeader,
   ActiveSessionHero,
   StatsGrid,
-  ActivityFeed,
   GlobalPerformance,
-  StreakCalendar,
-  UpcomingEvents
+  StreakCalendar
 } from '../../components/dashboard'
 import { DashboardSkeleton } from '../../components/ui'
 
@@ -35,15 +33,13 @@ export default function Dashboard() {
           <GreetingHeader />
           <ActiveSessionHero />
           <StatsGrid />
-          <ActivityFeed />
         </div>
 
         {/* Right Column */}
         <div className="lg:col-span-4 space-y-8">
-          <div className="lg:sticky lg:top-24 space-y-8">
+          <div className="lg:sticky lg:top-8 space-y-8">
             <GlobalPerformance />
             <StreakCalendar />
-            <UpcomingEvents />
           </div>
         </div>
       </div>

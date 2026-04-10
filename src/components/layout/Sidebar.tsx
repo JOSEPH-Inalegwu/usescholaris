@@ -55,7 +55,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose })
               : 'text-[#5a6061] hover:bg-[#ebeeef]/50'
               }`}
           >
-            <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
+            <span 
+              className="material-symbols-outlined text-[22px]"
+              style={{ color: isActive(item.path) ? '#d4aa37' : 'inherit' }}
+            >
+              {item.icon}
+            </span>
             <span className="text-sm">{item.label}</span>
           </Link>
         ))}
