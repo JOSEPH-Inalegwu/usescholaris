@@ -3,6 +3,13 @@ import { auth, db } from '../lib/firebase/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 
+export interface UserStats {
+  totalPoints: number;
+  totalQuestions: number;
+  totalTime: number;   // milliseconds
+  totalAttempts: number;
+}
+
 export interface UserProfile {
   uid: string;
   name?: string;
@@ -12,6 +19,7 @@ export interface UserProfile {
   level?: string;
   faculty?: string;
   department?: string;
+  stats?: UserStats;
   [key: string]: any;
 }
 

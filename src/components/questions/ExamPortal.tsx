@@ -5,7 +5,7 @@ import { type Question } from '../../types/question';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../lib/firebase/firebase';
 import { useAuth } from '../../hooks/useAuth';
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 
 interface ExamPortalProps {
   session: ExamSession;
@@ -67,6 +67,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
           score++;
         }
       });
+      const duration = Date.now() - session.startTime;
       const attemptData = {
         userId: user?.uid,
         courseSlug: session.courseSlug,
@@ -75,12 +76,24 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
         answers: finalAnswers,
         startTime: session.startTime,
         endTime: Date.now(),
-        duration: Date.now() - session.startTime,
+        duration,
         isRanked: session.isRanked,
         timestamp: serverTimestamp()
       };
 
+      // Write the full attempt record
       await addDoc(collection(db, 'exam_attempts'), attemptData);
+
+      // Atomic stats update — 1 write, 0 reads, scales infinitely
+      if (user?.uid) {
+        await updateDoc(doc(db, 'users', user.uid), {
+          'stats.totalPoints':    increment(score),
+          'stats.totalQuestions': increment(questions.length),
+          'stats.totalTime':      increment(duration),
+          'stats.totalAttempts':  increment(1),
+        });
+      }
+
       clearSession();
 
       if (document.fullscreenElement) {
