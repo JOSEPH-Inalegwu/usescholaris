@@ -15,7 +15,7 @@ interface ExamPortalProps {
 const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) => {
   const { updateAnswers, clearSession } = useSessionPersistence();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [questions, setQuestions] = useState<Question[]>(initialQuestions || []);
   const [loading, setLoading] = useState(!initialQuestions);
@@ -82,12 +82,37 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
       await addDoc(collection(db, 'exam_attempts'), attemptData);
 
       if (user?.uid) {
-        await updateDoc(doc(db, 'users', user.uid), {
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const prevDate = profile?.stats?.lastActivityDate;
+        const isFullExam = Object.keys(finalAnswers).length === questions.length;
+        
+        let updatePayload: any = {
           'stats.totalPoints': increment(score),
           'stats.totalQuestions': increment(questions.length),
           'stats.totalTime': increment(duration),
           'stats.totalAttempts': increment(1),
-        });
+          [`stats.activityLog.${todayStr}`]: increment(questions.length),
+        };
+
+        if (isFullExam) {
+          updatePayload['stats.lastActivityDate'] = todayStr;
+          
+          if (!prevDate) {
+            updatePayload['stats.streakCount'] = 1;
+          } else if (prevDate !== todayStr) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+            
+            if (prevDate === yesterdayStr) {
+              updatePayload['stats.streakCount'] = increment(1);
+            } else {
+              updatePayload['stats.streakCount'] = 1;
+            }
+          }
+        }
+
+        await updateDoc(doc(db, 'users', user.uid), updatePayload);
       }
 
       clearSession();
@@ -106,7 +131,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
       setIsSubmitting(false);
       alert('Something went wrong. Please try again.');
     }
-  }, [clearSession, isSubmitting, navigate, questions, session.courseSlug, session.isRanked, session.startTime, user?.uid]);
+  }, [clearSession, isSubmitting, navigate, questions, session.courseSlug, session.isRanked, session.startTime, user?.uid, profile?.stats?.lastActivityDate]);
 
   useEffect(() => {
     const totalDuration = 30 * 60 * 1000;

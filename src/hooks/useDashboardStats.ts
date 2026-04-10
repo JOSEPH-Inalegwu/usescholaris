@@ -10,13 +10,15 @@ export interface DashboardStats {
   semesterTarget: number;
   questionsAnswered: number;
   totalAttempts: number;
+  streakCount: number;
+  activityLog: Record<string, number>;
   loading: boolean;
 }
 
 export const useDashboardStats = (): DashboardStats => {
   const { profile, loading } = useAuth();
 
-  const stats = useMemo(() => {
+  const stats = useMemo((): Omit<DashboardStats, 'loading'> => {
     const s = profile?.stats;
 
     const deptKey = profile?.department?.toLowerCase() ?? '';
@@ -33,6 +35,8 @@ export const useDashboardStats = (): DashboardStats => {
         semesterTarget,
         questionsAnswered: 0,
         totalAttempts: 0,
+        streakCount: 0,
+        activityLog: {},
       };
     }
 
@@ -56,6 +60,8 @@ export const useDashboardStats = (): DashboardStats => {
       semesterTarget,
       questionsAnswered: s.totalQuestions,
       totalAttempts: s.totalAttempts,
+      streakCount: s.streakCount || 0,
+      activityLog: s.activityLog || {},
     };
   }, [profile?.stats, profile?.department, profile?.level]);
 

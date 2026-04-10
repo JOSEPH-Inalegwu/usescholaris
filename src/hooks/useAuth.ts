@@ -8,6 +8,9 @@ export interface UserStats {
   totalQuestions: number;
   totalTime: number;   // milliseconds
   totalAttempts: number;
+  streakCount?: number;
+  lastActivityDate?: string; // YYYY-MM-DD
+  activityLog?: Record<string, number>;
 }
 
 export interface UserProfile {
