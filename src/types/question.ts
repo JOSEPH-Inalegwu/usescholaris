@@ -13,10 +13,10 @@ export interface Course {
 
 export interface Question {
   id: string;
-  courseId: string;
-  year: number;
-  type: 'MCQ' | 'Theory';
-  content: string;
-  options?: string[];
-  answer: string;
+  courseSlug: string;
+  category: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  rationale?: string;
 }

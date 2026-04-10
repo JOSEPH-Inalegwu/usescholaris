@@ -7,11 +7,12 @@ interface PreExamModalProps {
   onClose: () => void;
   onConfirm: () => void;
   course: Course | null;
+  isResuming?: boolean;
 }
 
 const goldPalette = { primary: '#d4aa37ff', dark: '#cf6b19ff', accent: '#b32839' };
 
-const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm, course }) => {
+const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm, course, isResuming }) => {
   if (!course) return null;
 
   return (
@@ -56,7 +57,9 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
                 </button>
               </div>
               <h2 className="text-xl font-bold text-[#2a2d2e]">{course.title}</h2>
-              <p className="text-[#757c7d] text-xs italic mt-1">Evaluation Environment</p>
+              <p className="text-[#757c7d] text-xs italic mt-1">
+                {isResuming ? 'Resuming Active Session' : 'Evaluation Environment'}
+              </p>
             </div>
 
             {/* Content */}
@@ -117,8 +120,8 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
                 className="flex-[2] py-3 rounded-sm text-[10px] font-bold text-white transition-all shadow-sm hover:opacity-90 active:scale-[0.98] uppercase tracking-widest flex items-center justify-center gap-2"
                 style={{ backgroundColor: goldPalette.accent }}
               >
-                <span>Commence Ranked Session</span>
-                <span className="material-symbols-outlined text-sm">rocket_launch</span>
+                <span>{isResuming ? 'Resume Ranked Session' : 'Commence Ranked Session'}</span>
+                <span className="material-symbols-outlined text-sm">{isResuming ? 'play_circle' : 'rocket_launch'}</span>
               </button>
             </div>
           </motion.div>

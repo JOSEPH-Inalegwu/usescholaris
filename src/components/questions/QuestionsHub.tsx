@@ -1,47 +1,84 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useSessionPersistence } from '../../hooks/useSessionPersistence';
 import { type Course } from '../../types/question';
 import { motion, AnimatePresence } from 'framer-motion';
+import { db } from '../../lib/firebase/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import PreExamModal from './PreExamModal';
 
-// Mock data for initial implementation
-const MOCK_COURSES: Course[] = [
-  { id: '1', slug: 'csc201', code: 'CSC 201', title: 'Computer Programming I', semester: 1, level: '200', faculty: 'Science', department: 'Computer Science', questionCount: 120, lastUpdated: '2024-03-20' },
-  { id: '2', slug: 'csc205', code: 'CSC 205', title: 'Operating Systems I', semester: 1, level: '200', faculty: 'Science', department: 'Computer Science', questionCount: 85, lastUpdated: '2024-03-15' },
-  { id: '3', slug: 'csc202', code: 'CSC 202', title: 'Computer Programming II', semester: 2, level: '200', faculty: 'Science', department: 'Computer Science', questionCount: 150, lastUpdated: '2024-03-25' },
-  { id: '4', slug: 'mat201', code: 'MAT 201', title: 'Linear Algebra I', semester: 1, level: '200', faculty: 'Science', department: 'Computer Science', questionCount: 95, lastUpdated: '2024-03-10' },
-  { id: '5', slug: 'gss101', code: 'GSS 101', title: 'Use of English I', semester: 1, level: '100', faculty: 'General Studies', department: 'All', questionCount: 200, lastUpdated: '2024-03-22' },
-];
-
 const goldPalette = { primary: '#d4aa37ff', dark: '#cf6b19ff', accent: '#b32839' };
+
+const DEPARTMENT_MAP: Record<string, string[]> = {
+  cs: ['computer science', 'cs', 'it'],
+  cyb: ['cyber security', 'cybersecurity'],
+  slt: ['science laboratory technology', 'slt'],
+};
 
 const QuestionsHub: React.FC = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { saveSession, getSession } = useSessionPersistence();
+
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const [semester, setSemester] = useState<1 | 2>(1);
   const [mode, setMode] = useState<'prep' | 'past'>('prep');
   const [searchQuery, setSearchQuery] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');
 
-  // Modal State
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'course_banks'));
+        const courseData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            slug: data.courseSlug || doc.id.split('_')[2],
+            code: data.courseSlug?.toUpperCase() || 'N/A',
+            title: `Course: ${data.courseSlug?.toUpperCase() || doc.id}`,
+            semester: data.semester || 1,
+            level: data.level || '200',
+            faculty: 'Science',
+            department: data.dept || 'CS',
+            questionCount: data.questions?.length || 0,
+            lastUpdated: new Date().toISOString().split('T')[0]
+          } as Course;
+        });
+        setCourses(courseData);
+      } catch (err) {
+        console.error('Error fetching courses:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
+  }, []);
+
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isResuming, setIsResuming] = useState(false);
 
   const filteredCourses = useMemo(() => {
-    return MOCK_COURSES.filter(course => {
-      if (course.semester !== semester) return false;
-      if (profile?.level && course.level !== profile.level && course.department !== 'All') return false;
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return course.code.toLowerCase().includes(query) || course.title.toLowerCase().includes(query);
-      }
-      return true;
+    return courses.filter(course => {
+      const isSemMatch = Number(course.semester) === Number(semester);
+      const isLevelMatch = String(course.level).includes(String(profile?.level || '')) || String(profile?.level).includes(String(course.level));
+      const isDeptMatch =
+        course.department === 'All' ||
+        (DEPARTMENT_MAP[course.department.toLowerCase()] ?? []).includes(
+          profile?.department?.toLowerCase() ?? ''
+        );
+
+      return isSemMatch && isLevelMatch && isDeptMatch;
     });
-  }, [semester, profile, searchQuery]);
+  }, [semester, profile, searchQuery, courses]);
 
   const handleCourseClick = (course: Course) => {
+    const existingSession = getSession(course.slug);
     setSelectedCourse(course);
+    setIsResuming(!!existingSession);
     setIsModalOpen(true);
   };
 
@@ -57,7 +94,25 @@ const QuestionsHub: React.FC = () => {
 
   const handleStartExam = async () => {
     if (!selectedCourse) return;
-    const selectedQuestionIndices = prepareExamSession(selectedCourse.questionCount);
+
+    let sessionData;
+    const existingSession = getSession(selectedCourse.slug);
+
+    if (existingSession) {
+      sessionData = existingSession;
+    } else {
+      const selectedQuestionIndices = prepareExamSession(selectedCourse.questionCount);
+      const startTime = Date.now();
+      sessionData = {
+        courseSlug: selectedCourse.slug,
+        sessionQuestions: selectedQuestionIndices,
+        selectedAnswers: {},
+        isRanked: true,
+        startTime
+      };
+      saveSession(sessionData);
+    }
+
     try {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
@@ -67,11 +122,7 @@ const QuestionsHub: React.FC = () => {
     } finally {
       setIsModalOpen(false);
       navigate(`/exam/${selectedCourse.slug}`, {
-        state: {
-          sessionQuestions: selectedQuestionIndices,
-          isRanked: true,
-          startTime: Date.now()
-        }
+        state: sessionData
       });
     }
   };
@@ -161,7 +212,7 @@ const QuestionsHub: React.FC = () => {
 
       {/* Course Grid/List */}
       <div className={view === 'grid'
-        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+        ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         : "flex flex-col gap-4"
       }>
         <AnimatePresence mode="popLayout">
@@ -174,70 +225,43 @@ const QuestionsHub: React.FC = () => {
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.2 }}
               onClick={() => handleCourseClick(course)}
-              className={`group cursor-pointer bg-white border border-[#adb3b4]/20 rounded-sm p-6 hover:border-[#d4aa37]/30 transition-all duration-300 flex ${view === 'grid' ? 'flex-col justify-between' : 'flex-row items-center justify-between'
+              className={`group cursor-pointer bg-white border border-[#adb3b4]/20 rounded-sm p-4 hover:border-[#d4aa37]/30 transition-all duration-300 flex ${view === 'grid' ? 'flex-col justify-between' : 'flex-row items-center justify-between'
                 }`}
             >
               <div className={view === 'list' ? "flex items-center gap-6 flex-1" : ""}>
-                <div className="flex justify-between items-start mb-4 lg:mb-0">
+                <div className="flex justify-between items-center mb-4 lg:mb-0">
                   <div
-                    className="px-1 py-1 rounded-full text-[9px] font-bold text-white uppercase tracking-wider whitespace-nowrap flex items-center gap-2 min-h-[20px]"
+                    className="px-2 py-1 rounded-full text-[9px] font-bold text-white uppercase tracking-wider whitespace-nowrap flex items-center gap-2 min-h-[20px]"
                     style={{ backgroundColor: mode === 'past' ? goldPalette.primary : goldPalette.accent }}
                   >
-                    {mode === 'prep' ? (
-                      <span className="relative flex h-2 w-2 mx-0.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                      </span>
-                    ) : (
-                      course.code
-                    )}
+                    {course.code}
                   </div>
                   {view === 'grid' && (
-                    <span className="text-[9px] font-bold text-[#757c7d] uppercase tracking-wider">{course.questionCount} Qs</span>
+                    <span className="text-[9px] font-bold text-[#757c7d] tracking-wide">{course.questionCount} Questions</span>
                   )}
                 </div>
 
                 <div className={view === 'list' ? "flex-1" : ""}>
-                  <h3 className={`font-bold text-[#2a2d2e] group-hover:text-[#d4aa37] transition-colors tracking-tight ${view === 'grid' ? 'text-base mb-1' : 'text-sm'
+                  <h3 className={`font-bold text-[#2a2d2e] group-hover:text-[#d4aa37] transition-colors tracking-tight ${view === 'grid' ? 'text-xl mb-2' : 'text-base'
                     }`}>
-                    {course.title} {mode === 'prep' && <span className="text-[9px] text-[#b32839] font-bold ml-1">({course.code})</span>}
+                    {course.title}
                   </h3>
                   {view === 'list' && (
-                    <div className="flex items-center gap-4 mt-1">
-                      <span className="text-[9px] font-bold text-[#757c7d] uppercase">{course.questionCount} Questions</span>
-                      <span className="text-[9px] text-[#adb3b4]">•</span>
-                      <span className="text-[9px] font-bold text-[#757c7d] uppercase tracking-wider">Updated {course.lastUpdated}</span>
+                    <div className="flex items-center gap-6 mt-2">
+                      <span className="text-[11px] font-bold text-[#757c7d] tracking-wide">{course.questionCount} Questions</span>
+                      <span className="text-[11px] text-[#adb3b4]">•</span>
+                      <span className="text-[11px] font-bold text-[#757c7d] tracking-wide">Updated {course.lastUpdated}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className={`${view === 'grid' ? 'mt-6' : ''} flex items-center justify-between ${view === 'list' ? 'gap-6' : ''}`}>
-                {view === 'grid' && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-sm bg-[#f2f4f4] flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[14px] text-[#757c7d]">history</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[8px] font-bold text-[#757c7d] uppercase tracking-widest leading-none">Updated</span>
-                      <span className="text-[9px] font-bold text-[#2a2d2e] mt-0.5">{course.lastUpdated}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3">
-                  {view === 'list' && (
-                    <span className="text-[9px] font-bold text-[#757c7d] group-hover:text-[#2a2d2e] transition-colors uppercase tracking-widest">
-                      {mode === 'past' ? 'View Archive' : 'Start Prep'}
-                    </span>
-                  )}
-                  <div className="w-8 h-8 rounded-sm bg-[#f2f4f4] group-hover:bg-[#b32839] transition-all flex items-center justify-center shrink-0 border border-[#adb3b4]/10">
-                    <span className="material-symbols-outlined text-base text-[#5a6061] group-hover:text-white transition-colors">
-                      {mode === 'past' ? 'arrow_forward' : 'play_arrow'}
-                    </span>
-                  </div>
+              {view === 'grid' && (
+                <div className="flex items-center gap-2 mt-3">
+                  <span className="material-symbols-outlined text-[13px] text-[#adb3b4]">history</span>
+                  <span className="text-[9px] font-bold text-[#757c7d] tracking-wide">Updated {course.lastUpdated}</span>
                 </div>
-              </div>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -248,6 +272,7 @@ const QuestionsHub: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleStartExam}
         course={selectedCourse}
+        isResuming={isResuming}
       />
 
       {filteredCourses.length === 0 && (
