@@ -22,7 +22,7 @@ const QuestionsHub: React.FC = () => {
   const { saveSession, getSession } = useSessionPersistence();
 
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [semester, setSemester] = useState<1 | 2>(1);
   const [mode, setMode] = useState<'prep' | 'past'>('prep');
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,18 +113,10 @@ const QuestionsHub: React.FC = () => {
       saveSession(sessionData);
     }
 
-    try {
-      if (document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen();
-      }
-    } catch (err) {
-      console.error('Error attempting to enable full-screen mode:', err);
-    } finally {
-      setIsModalOpen(false);
-      navigate(`/exam/${selectedCourse.slug}`, {
-        state: sessionData
-      });
-    }
+    setIsModalOpen(false);
+    navigate(`/exam/${selectedCourse.slug}`, {
+      state: sessionData
+    });
   };
 
   return (

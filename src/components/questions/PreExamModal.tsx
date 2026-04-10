@@ -34,10 +34,10 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
             className="relative bg-white w-full max-w-lg rounded-sm overflow-hidden shadow-2xl border border-[#adb3b4]/20"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* High Stakes Warning Banner */}
+            {/* Top banner */}
             <div className="bg-[#b32839] py-2 px-6 flex items-center justify-center gap-3">
               <span className="material-symbols-outlined text-white text-sm animate-pulse">priority_high</span>
-              <span className="text-white font-bold text-[9px] uppercase tracking-[0.2em]">Ranked Session Active</span>
+              <span className="text-white font-bold text-[9px] uppercase tracking-[0.2em]">Exam in Progress</span>
             </div>
 
             {/* Header */}
@@ -57,51 +57,48 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
                 </button>
               </div>
               <h2 className="text-xl font-bold text-[#2a2d2e]">{course.title}</h2>
-              <p className="text-[#757c7d] text-xs italic mt-1">
-                {isResuming ? 'Resuming Active Session' : 'Evaluation Environment'}
+              <p className="text-[#757c7d] text-xs mt-1">
+                {isResuming ? 'You have an unfinished session — pick up where you left off.' : 'Read the instructions below before you begin.'}
               </p>
             </div>
 
             {/* Content */}
             <div className="p-6 space-y-6">
-              {/* Session Constraints */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#f2f4f4] p-4 rounded-sm border border-[#adb3b4]/20">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="material-symbols-outlined text-sm text-[#b32839]">format_list_numbered</span>
-                    <span className="text-[10px] text-[#757c7d] uppercase font-bold tracking-wider">Exam Limit</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-[#f2f4f4] px-4 py-3 rounded-sm border border-[#adb3b4]/20 flex items-center gap-3">
+                  <span className="material-symbols-outlined text-base text-[#b32839]">format_list_numbered</span>
+                  <div>
+                    <p className="text-[9px] text-[#757c7d] uppercase font-bold tracking-wider">Questions</p>
+                    <p className="text-sm font-bold text-[#2a2d2e]">40</p>
                   </div>
-                  <div className="text-lg font-bold text-[#2a2d2e]">40 Questions</div>
-                  <div className="text-[9px] text-[#b32839] font-medium mt-1 uppercase">Strictly Enforced</div>
                 </div>
-                <div className="bg-[#f2f4f4] p-4 rounded-sm border border-[#adb3b4]/20">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="material-symbols-outlined text-sm text-[#d4aa37]">timer</span>
-                    <span className="text-[10px] text-[#757c7d] uppercase font-bold tracking-wider">Time Cap</span>
+                <div className="bg-[#f2f4f4] px-4 py-3 rounded-sm border border-[#adb3b4]/20 flex items-center gap-3">
+                  <span className="material-symbols-outlined text-base text-[#d4aa37]">timer</span>
+                  <div>
+                    <p className="text-[9px] text-[#757c7d] uppercase font-bold tracking-wider">Time</p>
+                    <p className="text-sm font-bold text-[#2a2d2e]">30 mins</p>
                   </div>
-                  <div className="text-lg font-bold text-[#2a2d2e]">30 Minutes</div>
-                  <div className="text-[9px] text-[#757c7d] mt-1 uppercase">45s per question</div>
                 </div>
               </div>
 
-              {/* Ranked Rules */}
+              {/* Rules */}
               <div className="bg-[#b32839]/5 p-4 rounded-sm border border-[#b32839]/10 space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm text-[#b32839]">stars</span>
-                  <h3 className="font-bold text-[#b32839] text-[9px] uppercase tracking-wider">Ranking Impact Warning</h3>
+                  <span className="material-symbols-outlined text-sm text-[#b32839]">info</span>
+                  <h3 className="font-bold text-[#b32839] text-[9px] uppercase tracking-wider">Before You Start</h3>
                 </div>
                 <ul className="space-y-2">
                   <li className="flex gap-3 text-[10px] text-[#5a6061] leading-relaxed">
                     <span className="text-[#b32839] font-bold">•</span>
-                    Global Percentile updates immediately upon submission.
+                    Your score will be recorded and reflected on your dashboard.
                   </li>
                   <li className="flex gap-3 text-[10px] text-[#5a6061] leading-relaxed">
                     <span className="text-[#b32839] font-bold">•</span>
-                    Integrity Protocol:<span className="font-bold text-[#b32839]">Visibility tracking active</span>.
+                    Do not switch tabs or leave the page during the exam.
                   </li>
                   <li className="flex gap-3 text-[10px] text-[#5a6061] leading-relaxed">
                     <span className="text-[#b32839] font-bold">•</span>
-                    Questions are randomized from a pool of {course.questionCount}.
+                    Questions are drawn randomly from a pool of {course.questionCount}.
                   </li>
                 </ul>
               </div>
@@ -113,14 +110,14 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
                 onClick={onClose}
                 className="flex-1 py-3 rounded-sm text-[10px] font-bold text-[#757c7d] hover:bg-[#ebeeef] transition-colors uppercase tracking-widest border border-[#adb3b4]/20"
               >
-                Retreat
+                Go Back
               </button>
               <button
                 onClick={onConfirm}
                 className="flex-[2] py-3 rounded-sm text-[10px] font-bold text-white transition-all shadow-sm hover:opacity-90 active:scale-[0.98] uppercase tracking-widest flex items-center justify-center gap-2"
                 style={{ backgroundColor: goldPalette.accent }}
               >
-                <span>{isResuming ? 'Resume Ranked Session' : 'Commence Ranked Session'}</span>
+                <span>{isResuming ? 'Continue Exam' : 'Start Exam'}</span>
                 <span className="material-symbols-outlined text-sm">{isResuming ? 'play_circle' : 'rocket_launch'}</span>
               </button>
             </div>

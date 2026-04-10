@@ -7,26 +7,21 @@ export interface DashboardStats {
   avgScore: number;
   studyTimeMins: number;
   semesterProgress: number;
-  semesterTarget: number;       // dynamic target (courseCount * 100)
+  semesterTarget: number;
   questionsAnswered: number;
   totalAttempts: number;
   loading: boolean;
 }
 
-/**
- * Derives all stats from profile.stats — ZERO extra Firestore reads.
- * Stats are written atomically with increment() on every exam submit.
- */
 export const useDashboardStats = (): DashboardStats => {
   const { profile, loading } = useAuth();
 
   const stats = useMemo(() => {
     const s = profile?.stats;
 
-    // Dynamic target: look up how many courses this user's level/dept has
     const deptKey = profile?.department?.toLowerCase() ?? '';
     const levelKey = profile?.level?.replace(/\s+level/i, '').trim() ?? '';
-    const courseCount = DEPARTMENT_MAP[deptKey]?.[levelKey] ?? 9; // fallback 9
+    const courseCount = DEPARTMENT_MAP[deptKey]?.[levelKey] ?? 9;
     const semesterTarget = courseCount * 100;
 
     if (!s?.totalAttempts) {

@@ -48,8 +48,8 @@ const ExamPage = () => {
   const { getSession } = useSessionPersistence();
   
   const session: ExamSession = courseSlug 
-    ? getSession(courseSlug) || { courseSlug, startTime: Date.now(), isRanked: false }
-    : { courseSlug: 'unknown', startTime: Date.now(), isRanked: false };
+    ? getSession(courseSlug) || { courseSlug, startTime: Date.now(), isRanked: false, sessionQuestions: [], selectedAnswers: {} }
+    : { courseSlug: 'unknown', startTime: Date.now(), isRanked: false, sessionQuestions: [], selectedAnswers: {} };
 
   return <ExamPortal session={session} />;
 };
