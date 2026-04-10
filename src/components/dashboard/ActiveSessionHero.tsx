@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, collection, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase/firebase';
 import { useAuth } from '../../hooks';
@@ -53,7 +53,6 @@ const ActiveSessionHero: React.FC = () => {
 
         // Filter by user level
         const userLevel = profile?.level?.replace(/\s+level/i, '').trim();
-        const userDept = profile?.department?.toLowerCase() || '';
 
         let filtered = allCourses.filter(c => c.level === userLevel);
         if (filtered.length === 0) filtered = allCourses;
@@ -113,7 +112,7 @@ const ActiveSessionHero: React.FC = () => {
   const pulseAnim = {
     scale: [1, 1.02, 1],
     opacity: [1, 0.9, 1],
-    transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+    transition: { duration: 2, repeat: Infinity, ease: "easeInOut" as const }
   };
 
   const glintAnim = {
@@ -121,7 +120,7 @@ const ActiveSessionHero: React.FC = () => {
     transition: {
       duration: 3,
       repeat: Infinity,
-      ease: "linear",
+      ease: "linear" as const,
       repeatDelay: 4
     }
   };
