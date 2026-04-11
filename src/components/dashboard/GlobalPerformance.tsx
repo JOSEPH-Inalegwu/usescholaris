@@ -2,11 +2,11 @@ import React from 'react';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
 
 const GlobalPerformance: React.FC = () => {
-  const { accuracy, totalAttempts, loading } = useDashboardStats();
+  const { globalMastery, totalAttempts, loading } = useDashboardStats();
 
   // SVG ring: circumference of r=70 circle = 2π*70 ≈ 440
   const CIRCUMFERENCE = 440;
-  const strokeOffset = CIRCUMFERENCE - (CIRCUMFERENCE * (accuracy / 100));
+  const strokeOffset = CIRCUMFERENCE - (CIRCUMFERENCE * (globalMastery / 100));
 
   return (
     <div className="bg-white p-8 rounded-xl border border-transparent shadow-sm">
@@ -29,9 +29,9 @@ const GlobalPerformance: React.FC = () => {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-4xl font-black text-[#2d3435] font-['Lora']">
-              {loading ? '--' : `${accuracy}%`}
+              {loading ? '--' : `${globalMastery}%`}
             </span>
-            <span className="text-[10px] font-bold text-[#5a6061] uppercase tracking-widest font-['Lora']">Accuracy</span>
+            <span className="text-[10px] font-bold text-[#5a6061] uppercase tracking-widest font-['Lora']">Mastery</span>
           </div>
         </div>
       </div>

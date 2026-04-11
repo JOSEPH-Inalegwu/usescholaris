@@ -23,7 +23,7 @@ const GreetingHeader: React.FC = () => {
   return (
     <header className="mb-10 lg:mt-10">
       <h2 className="text-3xl font-extrabold tracking-tight text-[#2d3435] font-['Lora']">
-        {greeting}, <span className="text-[#535252]">{firstName}.</span>
+        {greeting}, <span className="text-[#d4aa37]">{firstName}.</span>
       </h2>
       <p className="text-[#5a6061] mt-2 font-medium tracking-wide">
         {subtext}

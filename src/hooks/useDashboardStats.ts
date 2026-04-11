@@ -4,6 +4,7 @@ import { DEPARTMENT_MAP } from './departmentCourseMap';
 
 export interface DashboardStats {
   accuracy: number;
+  globalMastery: number;
   avgScore: number;
   studyTimeMins: number;
   semesterProgress: number;
@@ -40,23 +41,24 @@ export const useDashboardStats = (): DashboardStats => {
       };
     }
 
-    const accuracy = s.totalQuestions > 0
+    const accuracy = s.totalAttempts > 0
       ? parseFloat(((s.totalPoints / s.totalQuestions) * 100).toFixed(1))
+      : 0;
+    
+    // Global Mastery: total correctly answered vs total questions in all attempted courses
+    const globalMastery = s.totalQuestions > 0
+      ? parseFloat(((s.totalPoints / semesterTarget) * 100).toFixed(1))
       : 0;
 
     const avgScore = parseFloat((s.totalPoints / s.totalAttempts).toFixed(1));
-
     const studyTimeMins = Math.round(s.totalTime / 1000 / 60);
-
-    const semesterProgress = s.totalQuestions > 0
-      ? parseFloat(((s.totalQuestions / semesterTarget) * 100).toFixed(1))
-      : 0;
 
     return {
       accuracy,
+      globalMastery,
       avgScore,
       studyTimeMins,
-      semesterProgress,
+      semesterProgress: globalMastery, // Renaming for clarity
       semesterTarget,
       questionsAnswered: s.totalQuestions,
       totalAttempts: s.totalAttempts,

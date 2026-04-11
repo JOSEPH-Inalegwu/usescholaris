@@ -45,7 +45,7 @@ const StatsGrid: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 {/* Accuracy */}
-                <motion.div whileHover={{ y: -4 }} className="bg-white rounded-xl p-5 border border-transparent shadow-sm hover:shadow-md transition-all">
+                <motion.div whileHover={{ y: -4 }} className="bg-white rounded-xl p-5 border border-[#d4aa37]/20 shadow-sm hover:shadow-md transition-all">
                     <p className="text-[10px] font-bold text-[#5a6061] uppercase mb-3 font-['Lora'] tracking-widest">Accuracy</p>
                     <div className="flex items-baseline gap-1 mb-2">
                         <AnimatedNumber value={fmt(accuracy)} decimals={accuracy % 1 !== 0 ? 1 : 0} />
@@ -64,7 +64,7 @@ const StatsGrid: React.FC = () => {
                 </motion.div>
 
                 {/* Avg Score */}
-                <motion.div whileHover={{ y: -4 }} className="bg-white rounded-xl p-5 border border-transparent shadow-sm hover:shadow-md transition-all">
+                <motion.div whileHover={{ y: -4 }} className="bg-white rounded-xl p-5 border border-[#d4aa37]/20 shadow-sm hover:shadow-md transition-all">
                     <p className="text-[10px] font-bold text-[#5a6061] uppercase mb-3 font-['Lora'] tracking-widest">Avg. Score</p>
                     <div className="flex items-baseline gap-1 mb-2">
                         <AnimatedNumber value={fmt(avgScore)} decimals={avgScore % 1 !== 0 ? 1 : 0} />
@@ -84,7 +84,7 @@ const StatsGrid: React.FC = () => {
                 </motion.div>
 
                 {/* Study Time */}
-                <motion.div whileHover={{ y: -4 }} className="bg-white rounded-xl p-5 border border-transparent shadow-sm hover:shadow-md transition-all">
+                <motion.div whileHover={{ y: -4 }} className="bg-white rounded-xl p-5 border border-[#d4aa37]/20 shadow-sm hover:shadow-md transition-all">
                     <p className="text-[10px] font-bold text-[#5a6061] uppercase mb-3 font-['Lora'] tracking-widest">Study Time</p>
                     <div className="flex items-baseline gap-1 mb-2">
                         <AnimatedNumber value={fmt(studyTimeMins)} />
