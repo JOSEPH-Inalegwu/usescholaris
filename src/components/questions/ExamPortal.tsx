@@ -54,14 +54,34 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
     setIsSubmitting(true);
 
     try {
-      let score = 0;
+      let correct = 0;
+      let incorrect = 0;
+      let skipped = 0;
+      const categoryBreakdown: Record<string, { correct: number; total: number }> = {};
+
       questions.forEach((q, i) => {
         const userAns = finalAnswers[i];
+        const category = q.category || 'General';
+        
+        if (!categoryBreakdown[category]) {
+          categoryBreakdown[category] = { correct: 0, total: 0 };
+        }
+        categoryBreakdown[category].total++;
+
+        if (userAns === undefined || userAns === null || userAns === '') {
+          skipped++;
+          return;
+        }
+
         const correctOptionText = Array.isArray(q.options)
           ? q.options[Number(q.correctAnswer)]
           : q.correctAnswer;
+
         if (String(userAns) === String(correctOptionText)) {
-          score++;
+          correct++;
+          categoryBreakdown[category].correct++;
+        } else {
+          incorrect++;
         }
       });
 
@@ -69,7 +89,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
       const attemptData = {
         userId: user?.uid,
         courseSlug: session.courseSlug,
-        score,
+        score: correct,
         totalQuestions: questions.length,
         answers: finalAnswers,
         startTime: session.startTime,
@@ -81,19 +101,19 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
 
       await addDoc(collection(db, 'exam_attempts'), attemptData);
 
+      let note = "";
       if (user?.uid) {
         const todayStr = new Date().toLocaleDateString('en-CA');
         const prevDate = profile?.stats?.lastActivityDate;
         const isFullExam = Object.keys(finalAnswers).length === questions.length;
         
-        const pct = (score / questions.length) * 100;
-        let note = "";
+        const pct = (correct / questions.length) * 100;
         if (pct < 50) note = "Good attempt! Let's focus on reviewing the key concepts before jumping back in. You've got this!";
         else if (pct <= 80) note = "Strong performance! You're building solid momentum. A few more rounds and you'll be at the top.";
         else note = "Elite level! You've mastered this course's core. Ready to take on something new?";
 
         let updatePayload: any = {
-          'stats.totalPoints': increment(score),
+          'stats.totalPoints': increment(correct),
           'stats.totalQuestions': increment(questions.length),
           'stats.totalTime': increment(duration),
           'stats.totalAttempts': increment(1),
@@ -102,7 +122,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
           'currentSession': {
             status: 'completed',
             courseName: session.courseSlug.toUpperCase(),
-            score,
+            score: correct,
             total: questions.length,
             postExamNote: note,
             updatedAt: serverTimestamp()
@@ -132,17 +152,28 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
 
       clearSession();
 
-
       navigate('/results', {
         replace: true,
         state: {
-          score,
+          score: correct,
           total: questions.length,
-          courseSlug: session.courseSlug
+          courseSlug: session.courseSlug,
+          note,
+          incorrect,
+          skipped,
+          duration,
+          categoryBreakdown,
+          questions,
+          answers: finalAnswers
         }
       });
     } catch (err) {
       console.error('Submission failed:', err);
+      // Detailed error logging for debugging
+      if (err instanceof Error) {
+        console.error('Error message:', err.message);
+        console.error('Stack trace:', err.stack);
+      }
       setIsSubmitting(false);
       alert('Something went wrong. Please try again.');
     }
