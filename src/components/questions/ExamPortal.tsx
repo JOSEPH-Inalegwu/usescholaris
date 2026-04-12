@@ -5,7 +5,8 @@ import { type Question } from '../../types/question';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../lib/firebase/firebase';
 import { useAuth } from '../../hooks/useAuth';
-import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
+import { checkAchievements } from '../../lib/utils/achievements';
 
 interface ExamPortalProps {
   session: ExamSession;
@@ -112,6 +113,8 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
         else if (pct <= 80) note = "Strong performance! You're building solid momentum. A few more rounds and you'll be at the top.";
         else note = "Elite level! You've mastered this course's core. Ready to take on something new?";
 
+        const newAchievements = checkAchievements(profile?.stats || {}, { score: correct, total: questions.length, skipped }, categoryBreakdown);
+
         let updatePayload: any = {
           'stats.totalPoints': increment(correct),
           'stats.totalQuestions': increment(questions.length),
@@ -128,6 +131,12 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
             updatedAt: serverTimestamp()
           }
         };
+
+        const existing = profile?.stats?.achievements || [];
+        const toAdd = newAchievements.filter(id => !existing.includes(id));
+        if (toAdd.length > 0) {
+           updatePayload['stats.achievements'] = arrayUnion(...toAdd);
+        }
 
         if (isFullExam) {
           updatePayload['stats.lastActivityDate'] = todayStr;
@@ -169,7 +178,6 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
       });
     } catch (err) {
       console.error('Submission failed:', err);
-      // Detailed error logging for debugging
       if (err instanceof Error) {
         console.error('Error message:', err.message);
         console.error('Stack trace:', err.stack);
@@ -249,7 +257,6 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
       {/* Top Bar */}
       <header className="bg-white border-b border-[#adb3b4]/20 sticky top-0 z-10">
         <div className="h-14 md:h-16 flex items-center justify-between px-4 md:px-8">
-          {/* Left */}
           <div className="flex items-center gap-3">
             <div className="px-3 py-2 bg-[#2a2d2e] text-white text-[10px] font-bold rounded-sm uppercase tracking-wider">
               {session.courseSlug.toUpperCase()}
@@ -262,9 +269,6 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
               Live
             </div>
           </div>
-
-
-          {/* Right */}
           <div className="flex items-center gap-3">
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm border text-sm font-bold tabular-nums tracking-wider transition-colors ${isLowTime ? 'bg-[#b32839]/5 border-[#b32839]/30 text-[#b32839]' : 'bg-[#f2f4f4] border-[#adb3b4]/10 text-[#2a2d2e]'
               }`}>
@@ -281,7 +285,6 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
           </div>
         </div>
 
-        {/* Progress bar */}
         <div className="h-0.5 bg-[#f2f4f4]">
           <motion.div
             className="h-full bg-[#d4aa37]"
@@ -293,12 +296,8 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
       </header>
 
       <div className="flex-1 flex flex-col lg:flex-row p-4 md:p-10 gap-6 max-w-[1400px] mx-auto w-full">
-
-        {/* Main Question Area */}
         <main className="flex-1 flex flex-col gap-4">
           <div className="bg-white border border-[#adb3b4]/20 rounded-sm p-5 md:p-8 shadow-sm">
-
-            {/* Question header row */}
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-[#adb3b4] tracking-widest">Q{currentIdx + 1} <span className="font-normal text-[#adb3b4]/60">/ 40</span></span>
@@ -321,12 +320,10 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
               </button>
             </div>
 
-            {/* Question text */}
             <h2 className="text-lg md:text-2xl font-bold text-[#1a1d1e] leading-[1.5] mb-7">
               {currentQuestion?.question}
             </h2>
 
-            {/* Options */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {currentQuestion?.options?.map((option, i) => {
                 const isSelected = answers[currentIdx] === option;
@@ -355,7 +352,6 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
             </div>
           </div>
 
-          {/* Navigation */}
           <div className="flex items-center justify-between px-1">
             <button
               onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))}
@@ -365,10 +361,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
               <span className="material-symbols-outlined text-xs">arrow_back</span>
               Previous
             </button>
-
-            {/* Mobile question counter */}
             <span className="text-[10px] font-bold text-[#adb3b4] md:hidden">{currentIdx + 1} / 40</span>
-
             <button
               onClick={() => currentIdx === 39 ? handleSubmission(answers) : setCurrentIdx(currentIdx + 1)}
               disabled={isSubmitting}
@@ -383,10 +376,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
           </div>
         </main>
 
-        {/* Sidebar */}
         <aside className="w-full lg:w-72 space-y-4">
-
-          {/* Question Map */}
           <div className="bg-white border border-[#adb3b4]/20 rounded-sm p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[10px] font-bold text-[#2a2d2e] uppercase tracking-wider">Question Map</h3>
@@ -396,18 +386,15 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
                 <span>40</span>
               </div>
             </div>
-
             <div className="grid grid-cols-8 gap-1">
               {Array.from({ length: 40 }).map((_, i) => {
                 const isAnswered = answers[i] !== undefined;
                 const isCurrent = currentIdx === i;
                 const isFlagged = flagged.has(i);
-
                 return (
                   <button
                     key={i}
                     onClick={() => setCurrentIdx(i)}
-                    title={`Question ${i + 1}${isFlagged ? ' (flagged)' : ''}${isAnswered ? ' (answered)' : ''}`}
                     className={`aspect-square rounded-sm text-[10px] font-bold transition-all flex items-center justify-center ${isCurrent
                       ? 'bg-[#2a2d2e] text-white'
                       : isFlagged
@@ -422,16 +409,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
                 );
               })}
             </div>
-
-            {/* Legend */}
-            <div className="mt-4 flex items-center gap-4 text-[10px] text-[#757c7d]">
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm bg-[#2a2d2e]/10 border border-[#2a2d2e]/10" /> Done</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm bg-[#d4aa37]" /> Flagged</div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm border border-[#adb3b4]/20" /> Skipped</div>
-            </div>
           </div>
-
-          {/* Unanswered warning */}
           {unansweredCount > 0 && (
             <div className="bg-[#b32839]/5 border border-[#b32839]/10 rounded-sm px-4 py-4 flex items-center gap-2">
               <span className="material-symbols-outlined text-sm text-[#b32839]">warning</span>
@@ -440,8 +418,6 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
               </p>
             </div>
           )}
-
-          {/* Auto-advance toggle */}
           <div className="bg-white border border-[#adb3b4]/20 rounded-sm px-5 py-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -456,11 +432,9 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
               </button>
             </div>
           </div>
-
         </aside>
       </div>
 
-      {/* Submission Overlay */}
       <AnimatePresence>
         {isSubmitting && (
           <motion.div
