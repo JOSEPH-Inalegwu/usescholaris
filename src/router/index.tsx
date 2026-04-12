@@ -9,6 +9,8 @@ import DashboardPage from '../pages/dashboard/Dashboard';
 import QuestionsPage from '../pages/questions';
 import ResultAnalysis from '../pages/questions/ResultAnalysis';
 import ReviewPage from '../pages/questions/ReviewPage';
+import AdminUpload from '../pages/admin/AdminUpload';
+import { AdminGuard } from '../components/auth/AdminGuard';
 import { ExamPortal } from '../components/questions';
 import { useSessionPersistence, type ExamSession } from '../hooks/useSessionPersistence';
 
@@ -44,6 +46,7 @@ export const router = createBrowserRouter([
   { path: '/exam/:courseSlug', element: <ProtectedRoute><ExamPage /></ProtectedRoute> },
   { path: '/results', element: <ProtectedRoute><ResultAnalysis /></ProtectedRoute> },
   { path: '/results/review', element: <ProtectedRoute><ReviewPage /></ProtectedRoute> },
+  { path: '/admin/upload', element: <ProtectedRoute><AdminGuard><AdminUpload /></AdminGuard></ProtectedRoute> },
   { path: '/profile', element: <ProtectedRoute><Profile /></ProtectedRoute> },
   { path: '*', element: <NotFound /> },
 ]);
