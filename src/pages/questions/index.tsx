@@ -5,7 +5,9 @@ import { QuestionsHub } from '../../components/questions';
 const QuestionsPage: React.FC = () => {
   return (
     <DashboardLayout>
-      <QuestionsHub />
+      <div className="max-w-7xl mx-auto">
+        <QuestionsHub />
+      </div>
     </DashboardLayout>
   );
 };

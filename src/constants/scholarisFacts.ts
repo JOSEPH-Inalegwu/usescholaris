@@ -30,8 +30,6 @@ export const SCHOLARIS_FACTS: ScholarisFact[] = [
     subtext:
       "Finishing the full Scholaris question bank before your CBT dramatically increases your familiarity with question patterns, phrasing, and topic weight.",
   },
-
-  // --- Performance / Weak Area Facts ---
   {
     header: "Scholaris knows where you'll lose marks.",
     subtext:
@@ -47,8 +45,6 @@ export const SCHOLARIS_FACTS: ScholarisFact[] = [
     subtext:
       "Many students feel ready but haven't tested themselves under real conditions. Scholaris's ranked sessions simulate exam pressure so your brain practices performing, not just remembering.",
   },
-
-  // --- Study / CBT Facts ---
   {
     header: "CBT punishes guessing. Scholaris trains you not to.",
     subtext:
@@ -69,8 +65,6 @@ export const SCHOLARIS_FACTS: ScholarisFact[] = [
     subtext:
       "Students who start practicing at least 3 days before their CBT consistently outperform those who cram the night before. Start a session today.",
   },
-
-  // --- Scholaris Platform Facts ---
   {
     header: "AI studied your course so you study smarter.",
     subtext:

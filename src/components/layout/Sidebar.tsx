@@ -25,7 +25,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose })
     { path: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
     { path: '/questions', icon: 'quiz', label: 'Questions' },
     { path: '/leaderboard', icon: 'leaderboard', label: 'Leaderboard' },
-    { path: '/profile', icon: 'person', label: 'Profile' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -71,10 +70,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose })
           <span className="material-symbols-outlined text-[22px]">dark_mode</span>
           <span className="text-sm">Dark Mode</span>
         </button>
-        <button className="w-full text-[#5a6061] hover:bg-[#ebeeef]/50 px-4 py-3 rounded-lg flex items-center gap-3 transition-colors">
-          <span className="material-symbols-outlined text-[22px]">settings</span>
+        <Link 
+          to="/settings"
+          onClick={() => isDrawer && onClose?.()}
+          className={`w-full text-[#5a6061] hover:bg-[#ebeeef]/50 px-4 py-3 rounded-lg flex items-center gap-3 transition-colors active:scale-[0.98] ${isActive('/settings')
+            ? 'bg-[#ebeeef] text-[#5f5e5e] font-semibold'
+            : ''
+            }`}
+        >
+          <span 
+            className="material-symbols-outlined text-[22px]"
+            style={{ color: isActive('/settings') ? '#d4aa37' : 'inherit' }}
+          >
+            settings
+          </span>
           <span className="text-sm">Settings</span>
-        </button>
+        </Link>
 
         <div className="mt-6 px-2 py-4 flex items-center gap-3 bg-[#f2f4f4]/50 rounded-xl">
           {loading ? (

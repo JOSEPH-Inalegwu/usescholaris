@@ -5,14 +5,18 @@ import { SCHOLARIS_FACTS } from '../../constants/scholarisFacts';
 
 const ActiveSessionHero: React.FC = () => {
   const navigate = useNavigate();
-  const [insight, setInsight] = useState(SCHOLARIS_FACTS[0]);
+  const [currentIndex, setCurrentIndex] = useState(
+    Math.floor(Math.random() * SCHOLARIS_FACTS.length)
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setInsight(SCHOLARIS_FACTS[Math.floor(Math.random() * SCHOLARIS_FACTS.length)]);
+      setCurrentIndex((prev) => (prev + 1) % SCHOLARIS_FACTS.length);
     }, 90000); // 90 seconds
     return () => clearInterval(interval);
   }, []);
+
+  const insight = SCHOLARIS_FACTS[currentIndex];
 
   return (
     <AnimatePresence mode="wait">

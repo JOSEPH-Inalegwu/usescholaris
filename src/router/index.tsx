@@ -10,6 +10,7 @@ import QuestionsPage from '../pages/questions';
 import ResultAnalysis from '../pages/questions/ResultAnalysis';
 import ReviewPage from '../pages/questions/ReviewPage';
 import AdminUpload from '../pages/admin/AdminUpload';
+import ProfilePage from '../pages/profile';
 import { AdminGuard } from '../components/auth/AdminGuard';
 import { ExamPortal } from '../components/questions';
 import { useSessionPersistence, type ExamSession } from '../hooks/useSessionPersistence';
@@ -29,7 +30,6 @@ const ExamPage = () => {
   return <ExamPortal session={session} />;
 };
 
-const Profile = () => <div className="p-4 font-['Lora']">Profile Page</div>;
 const NotFound = () => <div className="p-4 font-['Lora']">404 Not Found</div>;
 
 export const router = createBrowserRouter([
@@ -47,6 +47,6 @@ export const router = createBrowserRouter([
   { path: '/results', element: <ProtectedRoute><ResultAnalysis /></ProtectedRoute> },
   { path: '/results/review', element: <ProtectedRoute><ReviewPage /></ProtectedRoute> },
   { path: '/admin/upload', element: <ProtectedRoute><AdminGuard><AdminUpload /></AdminGuard></ProtectedRoute> },
-  { path: '/profile', element: <ProtectedRoute><Profile /></ProtectedRoute> },
+  { path: '/settings', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
   { path: '*', element: <NotFound /> },
 ]);

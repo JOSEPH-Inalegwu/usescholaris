@@ -27,19 +27,21 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1">
-        {/* Left Column */}
-        <div className="lg:col-span-8 space-y-8">
-          <GreetingHeader />
-          <ActiveSessionHero />
-          <StatsGrid />
-        </div>
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1">
+          {/* Left Column */}
+          <div className="lg:col-span-8 space-y-8">
+            <GreetingHeader />
+            <ActiveSessionHero />
+            <StatsGrid />
+          </div>
 
-        {/* Right Column */}
-        <div className="lg:col-span-4 space-y-8">
-          <div className="lg:sticky lg:top-8 space-y-8">
-            <GlobalPerformance />
-            <StreakCalendar />
+          {/* Right Column */}
+          <div className="lg:col-span-4 space-y-8">
+            <div className="lg:sticky lg:top-8 space-y-8">
+              <GlobalPerformance />
+              <StreakCalendar />
+            </div>
           </div>
         </div>
       </div>

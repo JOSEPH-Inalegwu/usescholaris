@@ -63,7 +63,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
       questions.forEach((q, i) => {
         const userAns = finalAnswers[i];
         const category = q.category || 'General';
-        
+
         if (!categoryBreakdown[category]) {
           categoryBreakdown[category] = { correct: 0, total: 0 };
         }
@@ -107,7 +107,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
         const todayStr = new Date().toLocaleDateString('en-CA');
         const prevDate = profile?.stats?.lastActivityDate;
         const isFullExam = Object.keys(finalAnswers).length === questions.length;
-        
+
         const pct = (correct / questions.length) * 100;
         if (pct < 50) note = "Good attempt! Let's focus on reviewing the key concepts before jumping back in. You've got this!";
         else if (pct <= 80) note = "Strong performance! You're building solid momentum. A few more rounds and you'll be at the top.";
@@ -135,19 +135,19 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
         const existing = profile?.stats?.achievements || [];
         const toAdd = newAchievements.filter(id => !existing.includes(id));
         if (toAdd.length > 0) {
-           updatePayload['stats.achievements'] = arrayUnion(...toAdd);
+          updatePayload['stats.achievements'] = arrayUnion(...toAdd);
         }
 
         if (isFullExam) {
           updatePayload['stats.lastActivityDate'] = todayStr;
-          
+
           if (!prevDate) {
             updatePayload['stats.streakCount'] = 1;
           } else if (prevDate !== todayStr) {
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-            
+
             if (prevDate === yesterdayStr) {
               updatePayload['stats.streakCount'] = increment(1);
             } else {
