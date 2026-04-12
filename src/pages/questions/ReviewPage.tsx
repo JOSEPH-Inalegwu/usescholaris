@@ -1,37 +1,6 @@
 import React, { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { motion } from 'framer-motion';
-
-const ReviewItem: React.FC<{ q: any; i: number; isFailed: boolean }> = ({ q, i, isFailed }) => {
-  const [expanded, setExpanded] = React.useState(false);
-
-  return (
-    <div className={`p-6 rounded-sm border-l-4 ${isFailed ? 'border-l-[#b32839]' : 'border-l-green-500'} bg-white border border-[#adb3b4]/20 shadow-sm`}>
-      <div className="flex justify-between items-start mb-4">
-        <p className="font-bold text-[#2a2d2e] text-sm">Q{i + 1}: {q.question}</p>
-        <button 
-          onClick={() => setExpanded(!expanded)}
-          className="text-[9px] font-bold uppercase tracking-widest text-[#d4aa37] hover:underline"
-        >
-          {expanded ? 'Hide Explanation' : 'See Explanation'}
-        </button>
-      </div>
-
-      {expanded && (
-        <div className="mt-4 pt-4 border-t border-[#f2f4f4]">
-          <p className="text-xs text-[#757c7d] mb-4">Correct Answer: <span className="font-bold text-[#2d3435]">{Array.isArray(q.options) ? q.options[Number(q.correctAnswer)] : q.correctAnswer}</span></p>
-          {q.rationale && (
-            <div className="p-3 bg-[#fdfcf8] border-l-2 border-[#d4aa37]">
-              <p className="text-[9px] font-bold text-[#d4aa37] uppercase tracking-widest mb-1">💡 Correct Logic</p>
-              <p className="text-xs text-[#5a6061] leading-relaxed">{q.rationale}</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
 
 const ReviewPage: React.FC = () => {
   const location = useLocation();

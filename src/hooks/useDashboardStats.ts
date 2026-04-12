@@ -30,6 +30,7 @@ export const useDashboardStats = (): DashboardStats => {
     if (!s?.totalAttempts) {
       return {
         accuracy: 0,
+        globalMastery: 0,
         avgScore: 0,
         studyTimeMins: 0,
         semesterProgress: 0,
@@ -58,7 +59,7 @@ export const useDashboardStats = (): DashboardStats => {
       globalMastery,
       avgScore,
       studyTimeMins,
-      semesterProgress: globalMastery, // Renaming for clarity
+      semesterProgress: globalMastery,
       semesterTarget,
       questionsAnswered: s.totalQuestions,
       totalAttempts: s.totalAttempts,

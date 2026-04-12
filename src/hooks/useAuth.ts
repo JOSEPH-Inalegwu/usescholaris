@@ -12,6 +12,7 @@ export interface UserStats {
   lastActivityDate?: string; // YYYY-MM-DD
   activityLog?: Record<string, number>;
   courseActivity?: Record<string, number>;
+  achievements?: string[];
 }
 
 export interface UserProfile {

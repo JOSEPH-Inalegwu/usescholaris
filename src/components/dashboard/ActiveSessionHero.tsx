@@ -10,22 +10,13 @@ const ActiveSessionHero: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setInsight(SCHOLARIS_FACTS[Math.floor(Math.random() * SCHOLARIS_FACTS.length)]);
-    }, 90000);
+    }, 90000); // 90 seconds
     return () => clearInterval(interval);
   }, []);
 
-  const glintAnim = {
-    x: ['-100%', '100%'],
-    transition: {
-      duration: 3,
-      repeat: Infinity,
-      ease: "linear" as const,
-      repeatDelay: 4
-    }
-  };
-
   return (
     <AnimatePresence mode="wait">
+
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
