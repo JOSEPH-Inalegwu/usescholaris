@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { db } from '../../lib/firebase/firebase';
-import { writeBatch, doc, collection } from 'firebase/firestore';
+import { writeBatch, doc, collection, setDoc, query, where, getDocs } from 'firebase/firestore';
 import DashboardLayout from '../../layouts/DashboardLayout';
 
 interface RawQuestion {
@@ -77,17 +77,54 @@ const AdminUpload: React.FC = () => {
         batch.set(newDocRef, {
           ...cleanQuestion,
           courseSlug: courseSlug.toLowerCase(),
+          randomId: Math.random(),
           createdAt: new Date().toISOString()
         });
       });
 
       await batch.commit();
-      setSyncStatus({ type: 'success', message: `Successfully synced ${questions.length} questions for ${courseSlug.toUpperCase()}` });
+
+      await setDoc(doc(db, 'course_metadata', courseSlug.toLowerCase()), {
+        totalQuestions: questions.length,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+
+      setSyncStatus({ 
+        type: 'success', 
+        message: `Successfully uploaded ${questions.length} questions to ${courseSlug.toUpperCase()}` 
+      });
       setQuestions([]);
       setCourseSlug('');
     } catch (err) {
       console.error('Sync failed:', err);
       setSyncStatus({ type: 'error', message: 'Sync failed. Check console for details.' });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleForceRefresh = async () => {
+    if (!courseSlug) {
+      alert('Please enter a course slug first');
+      return;
+    }
+    setIsSyncing(true);
+    try {
+      const q = query(collection(db, 'questions'), where('courseSlug', '==', courseSlug.toLowerCase()));
+      const snap = await getDocs(q);
+      
+      await setDoc(doc(db, 'course_metadata', courseSlug.toLowerCase()), {
+        totalQuestions: snap.size,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+
+      setSyncStatus({ 
+        type: 'success', 
+        message: `Refresh Complete: ${snap.size} documents counted for ${courseSlug.toUpperCase()}` 
+      });
+    } catch (err) {
+      console.error('Refresh failed:', err);
+      setSyncStatus({ type: 'error', message: 'Refresh failed.' });
     } finally {
       setIsSyncing(false);
     }
@@ -145,13 +182,21 @@ const AdminUpload: React.FC = () => {
                   <p className="text-[9px] font-bold text-[#adb3b4] uppercase tracking-widest">Errors</p>
                 </div>
               </div>
-              <button 
-                onClick={handleSync}
-                disabled={isSyncing || invalidCount > 0 || !courseSlug}
-                className="px-10 py-4 bg-[#d4aa37] text-black font-black text-[11px] uppercase tracking-[0.2em] rounded-sm hover:bg-[#2a2d2e] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                {isSyncing ? 'Syncing...' : 'Confirm Sync'}
-              </button>
+              <div className="flex gap-3">
+                <button 
+                  onClick={handleForceRefresh}
+                  className="px-6 py-4 bg-[#f2f4f4] text-[#757c7d] font-black text-[11px] uppercase tracking-[0.2em] rounded-sm hover:bg-[#adb3b4]/20 transition-all"
+                >
+                  Force Refresh
+                </button>
+                <button 
+                  onClick={handleSync}
+                  disabled={isSyncing || invalidCount > 0 || !courseSlug}
+                  className="px-10 py-4 bg-[#d4aa37] text-black font-black text-[11px] uppercase tracking-[0.2em] rounded-sm hover:bg-[#2a2d2e] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {isSyncing ? 'Syncing...' : 'Confirm Sync'}
+                </button>
+              </div>
             </div>
 
             <div className="bg-white rounded-sm border border-[#adb3b4]/20 shadow-sm overflow-hidden">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { type Course } from '../../types/question';
 
@@ -13,6 +13,18 @@ interface PreExamModalProps {
 const goldPalette = { primary: '#d4aa37ff', dark: '#cf6b19ff', accent: '#b32839' };
 
 const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm, course, isResuming }) => {
+  const isFullyCached = useMemo(() => {
+    if (!course) return false;
+    const cacheKey = `exam_cache_${course.slug.toLowerCase()}`;
+    const cachedData = localStorage.getItem(cacheKey);
+    if (!cachedData) return false;
+    try {
+      return JSON.parse(cachedData).isFullyCached;
+    } catch {
+      return false;
+    }
+  }, [course, isOpen]);
+
   if (!course) return null;
 
   return (
@@ -102,6 +114,26 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
                   </li>
                 </ul>
               </div>
+
+              {/* Cache/Read Info */}
+              {!isResuming && (
+                <div className={`p-4 rounded-sm border flex items-start gap-3 ${isFullyCached ? 'bg-green-50 border-green-100' : 'bg-[#fdfaf2] border-[#d4aa37]/20'}`}>
+                  <span className={`material-symbols-outlined text-sm ${isFullyCached ? 'text-green-600' : 'text-[#d4aa37]'}`}>
+                    {isFullyCached ? 'verified' : 'bolt'}
+                  </span>
+                  <div>
+                    <p className={`text-[10px] font-bold uppercase tracking-wider ${isFullyCached ? 'text-green-700' : 'text-[#d4aa37]'}`}>
+                      {isFullyCached ? 'Unlimited Practice Active' : 'Daily Fetch Required'}
+                    </p>
+                    <p className="text-[10px] text-[#5a6061] mt-1 leading-relaxed">
+                      {isFullyCached 
+                        ? "This course is fully cached. Future exams for this course are unlimited and free."
+                        : "This exam will use 1 of your 5 daily fetches. After 5 fetches for this course, all future exams will be unlimited and free."
+                      }
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer */}

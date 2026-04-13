@@ -5,8 +5,9 @@ import { type Question } from '../../types/question';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../lib/firebase/firebase';
 import { useAuth } from '../../hooks/useAuth';
-import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, increment, arrayUnion, query, where, limit, getDocs } from 'firebase/firestore';
 import { checkAchievements } from '../../lib/utils/achievements';
+import QuestionCard from './QuestionCard';
 
 interface ExamPortalProps {
   session: ExamSession;
@@ -31,15 +32,80 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
     if (!initialQuestions) {
       const fetchQuestions = async () => {
         try {
-          const docId = `cs_300_${session.courseSlug}`;
-          const docRef = doc(db, 'course_banks', docId);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            const allQuestions = data.questions as Question[];
-            const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
+          const cacheKey = `exam_cache_${session.courseSlug.toLowerCase()}`;
+          const cachedData = localStorage.getItem(cacheKey);
+          let cache = cachedData ? JSON.parse(cachedData) : { questions: [], fetchCount: 0, isFullyCached: false };
+
+          // 1. If fully cached, serve 40 random from local storage (Zero Cost)
+          if (cache.isFullyCached && cache.questions.length >= 40) {
+            const shuffled = [...cache.questions].sort(() => 0.5 - Math.random());
             setQuestions(shuffled.slice(0, 40));
+            setLoading(false);
+            return;
           }
+
+          // 2. Check Daily Read Limit (Only for Firebase fetches)
+          const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+          const dailyReadsKey = `exam_daily_reads_${user?.uid}_${today}`;
+          const dailyReads = parseInt(localStorage.getItem(dailyReadsKey) || '0');
+
+          if (dailyReads >= 5) {
+            setQuestions([]);
+            setLoading(false);
+            alert("You have used all 5 fetches today. You can still practice fully cached courses. New courses will unlock tomorrow.");
+            navigate('/dashboard');
+            return;
+          }
+
+          // 3. Otherwise, fetch from Firebase
+          const questionsCol = collection(db, 'questions');
+          const randomVal = Math.random();
+          
+          const q1 = query(
+            questionsCol,
+            where('courseSlug', '==', session.courseSlug.toLowerCase()),
+            where('randomId', '>=', randomVal),
+            limit(40)
+          );
+          
+          const snapshot1 = await getDocs(q1);
+          let fetchedDocs = snapshot1.docs.map(d => ({ id: d.id, ...d.data() } as Question));
+
+          if (fetchedDocs.length < 40) {
+            const remaining = 40 - fetchedDocs.length;
+            const q2 = query(
+              questionsCol,
+              where('courseSlug', '==', session.courseSlug.toLowerCase()),
+              where('randomId', '<', randomVal),
+              limit(remaining)
+            );
+            const snapshot2 = await getDocs(q2);
+            const fallbackDocs = snapshot2.docs.map(d => ({ id: d.id, ...d.data() } as Question));
+            fetchedDocs = [...fetchedDocs, ...fallbackDocs];
+          }
+
+          // 4. Increment Daily Reads counter
+          localStorage.setItem(dailyReadsKey, (dailyReads + 1).toString());
+
+          // Update Local Cache
+          const existingIds = new Set(cache.questions.map((q: any) => q.id));
+          const uniqueNewQuestions = fetchedDocs.filter(q => !existingIds.has(q.id));
+          
+          const updatedQuestions = [...cache.questions, ...uniqueNewQuestions];
+          const newFetchCount = cache.fetchCount + 1;
+          
+          const updatedCache = {
+            questions: updatedQuestions,
+            fetchCount: newFetchCount,
+            isFullyCached: newFetchCount >= 5 || updatedQuestions.length >= 200,
+            lastUpdated: Date.now()
+          };
+
+          localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
+
+          // Set questions for the current session
+          const shuffled = fetchedDocs.sort(() => 0.5 - Math.random());
+          setQuestions(shuffled);
         } catch (err) {
           console.error('Failed to fetch questions:', err);
         } finally {
@@ -48,7 +114,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
       };
       fetchQuestions();
     }
-  }, [initialQuestions, session.courseSlug]);
+  }, [initialQuestions, session.courseSlug, user?.uid, navigate]);
 
   const handleSubmission = useCallback(async (finalAnswers: Record<number, string | number>) => {
     if (isSubmitting) return;
@@ -220,17 +286,19 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
   };
 
   const handleAnswerSelect = (option: string) => {
-    const newAnswers = { ...answers, [currentIdx]: option };
+    const currentQId = questions[currentIdx].id;
+    const newAnswers = { ...answers, [currentQId]: option };
     setAnswers(newAnswers);
-    if (autoNext && currentIdx < 39) {
+    if (autoNext && currentIdx < questions.length - 1) {
       setTimeout(() => setCurrentIdx(prev => prev + 1), 250);
     }
   };
 
   const toggleFlag = () => {
+    const currentQId = questions[currentIdx].id;
     const newFlagged = new Set(flagged);
-    if (newFlagged.has(currentIdx)) newFlagged.delete(currentIdx);
-    else newFlagged.add(currentIdx);
+    if (newFlagged.has(currentQId)) newFlagged.delete(currentQId);
+    else newFlagged.add(currentQId);
     setFlagged(newFlagged);
   };
 
@@ -247,8 +315,9 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
 
   const currentQuestion = questions[currentIdx];
   const answeredCount = Object.keys(answers).length;
-  const unansweredCount = 40 - answeredCount;
-  const progressPct = (answeredCount / 40) * 100;
+  const totalQuestionCount = questions.length || 40; // Fallback to 40 for UI consistency if loading
+  const unansweredCount = Math.max(0, totalQuestionCount - answeredCount);
+  const progressPct = (answeredCount / totalQuestionCount) * 100;
   const isLowTime = timeLeft < 300;
 
   return (
@@ -300,7 +369,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
           <div className="bg-white border border-[#adb3b4]/20 rounded-sm p-5 md:p-8 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#adb3b4] tracking-widest">Q{currentIdx + 1} <span className="font-normal text-[#adb3b4]/60">/ 40</span></span>
+                <span className="text-xs font-bold text-[#adb3b4] tracking-widest">Q{currentIdx + 1} <span className="font-normal text-[#adb3b4]/60">/ {totalQuestionCount}</span></span>
                 {currentQuestion?.category && (
                   <>
                     <span className="text-[#e0e0e0]">|</span>
@@ -320,36 +389,11 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
               </button>
             </div>
 
-            <h2 className="text-lg md:text-2xl font-bold text-[#1a1d1e] leading-[1.5] mb-7">
-              {currentQuestion?.question}
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {currentQuestion?.options?.map((option, i) => {
-                const isSelected = answers[currentIdx] === option;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => handleAnswerSelect(option)}
-                    className={`p-4 text-left rounded-sm border transition-all flex items-center gap-4 group ${isSelected
-                      ? 'border-[#d4aa37] bg-[#fdf9ec] shadow-sm'
-                      : 'border-[#e5e7e8] hover:border-[#d4aa37]/60 hover:bg-[#fdfcf8] bg-white'
-                      }`}
-                  >
-                    <div className={`w-7 h-7 rounded-sm border-2 flex items-center justify-center text-[11px] font-bold shrink-0 transition-all ${isSelected
-                      ? 'bg-[#d4aa37] border-[#d4aa37] text-white'
-                      : 'border-[#d0d3d4] text-[#9aa0a1] group-hover:border-[#d4aa37] group-hover:text-[#d4aa37]'
-                      }`}>
-                      {String.fromCharCode(65 + i)}
-                    </div>
-                    <span className={`text-sm md:text-base leading-snug ${isSelected ? 'font-semibold text-[#1a1d1e]' : 'font-medium text-[#3c4142]'
-                      }`}>
-                      {option}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <QuestionCard
+              question={currentQuestion}
+              selectedAnswer={answers[currentIdx]}
+              onAnswerSelect={handleAnswerSelect}
+            />
           </div>
 
           <div className="flex items-center justify-between px-1">
@@ -361,16 +405,16 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
               <span className="material-symbols-outlined text-xs">arrow_back</span>
               Previous
             </button>
-            <span className="text-[10px] font-bold text-[#adb3b4] md:hidden">{currentIdx + 1} / 40</span>
+            <span className="text-[10px] font-bold text-[#adb3b4] md:hidden">{currentIdx + 1} / {totalQuestionCount}</span>
             <button
-              onClick={() => currentIdx === 39 ? handleSubmission(answers) : setCurrentIdx(currentIdx + 1)}
+              onClick={() => currentIdx === totalQuestionCount - 1 ? handleSubmission(answers) : setCurrentIdx(currentIdx + 1)}
               disabled={isSubmitting}
-              className={`flex items-center gap-1.5 px-6 py-3 text-[12px] font-bold text-white rounded-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 ${currentIdx === 39 ? 'bg-[#b32839]' : 'bg-[#2a2d2e]'
+              className={`flex items-center gap-1.5 px-6 py-3 text-[12px] font-bold text-white rounded-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 ${currentIdx === totalQuestionCount - 1 ? 'bg-[#b32839]' : 'bg-[#2a2d2e]'
                 }`}
             >
-              {currentIdx === 39 ? (isSubmitting ? 'Saving...' : 'Submit Exam') : 'Next'}
+              {currentIdx === totalQuestionCount - 1 ? (isSubmitting ? 'Saving...' : 'Submit Exam') : 'Next'}
               <span className="material-symbols-outlined text-xs">
-                {currentIdx === 39 ? 'check_circle' : 'arrow_forward'}
+                {currentIdx === totalQuestionCount - 1 ? 'check_circle' : 'arrow_forward'}
               </span>
             </button>
           </div>
@@ -383,11 +427,11 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
               <div className="flex items-center gap-2 text-[10px] text-[#adb3b4]">
                 <span className="font-bold text-[#2a2d2e]">{answeredCount}</span>
                 <span>/</span>
-                <span>40</span>
+                <span>{totalQuestionCount}</span>
               </div>
             </div>
             <div className="grid grid-cols-8 gap-1">
-              {Array.from({ length: 40 }).map((_, i) => {
+              {Array.from({ length: totalQuestionCount }).map((_, i) => {
                 const isAnswered = answers[i] !== undefined;
                 const isCurrent = currentIdx === i;
                 const isFlagged = flagged.has(i);

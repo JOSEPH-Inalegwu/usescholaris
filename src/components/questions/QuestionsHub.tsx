@@ -31,20 +31,21 @@ const QuestionsHub: React.FC = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'course_banks'));
+        const querySnapshot = await getDocs(collection(db, 'course_metadata'));
         const courseData = querySnapshot.docs.map(doc => {
           const data = doc.data();
+          const slug = doc.id;
           return {
             id: doc.id,
-            slug: data.courseSlug || doc.id.split('_')[2],
-            code: data.courseSlug?.toUpperCase() || 'N/A',
-            title: `Course: ${data.courseSlug?.toUpperCase() || doc.id}`,
-            semester: data.semester || 1,
-            level: data.level || '200',
+            slug: slug,
+            code: slug.toUpperCase(),
+            title: `Course: ${slug.toUpperCase()}`,
+            semester: 1, // Defaulting as we now fetch metadata
+            level: '100',
             faculty: 'Science',
-            department: data.dept || 'CS',
-            questionCount: data.questions?.length || 0,
-            lastUpdated: new Date().toISOString().split('T')[0]
+            department: 'GST',
+            questionCount: data.totalQuestions || 0,
+            lastUpdated: data.lastUpdated?.split('T')[0] || new Date().toISOString().split('T')[0]
           } as Course;
         });
         setCourses(courseData);
@@ -82,16 +83,6 @@ const QuestionsHub: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const prepareExamSession = (poolSize: number) => {
-    const EXAM_LIMIT = 40;
-    const indices = Array.from({ length: poolSize }, (_, i) => i);
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    return indices.slice(0, Math.min(poolSize, EXAM_LIMIT));
-  };
-
   const handleStartExam = async () => {
     if (!selectedCourse) return;
 
@@ -101,11 +92,10 @@ const QuestionsHub: React.FC = () => {
     if (existingSession) {
       sessionData = existingSession;
     } else {
-      const selectedQuestionIndices = prepareExamSession(selectedCourse.questionCount);
       const startTime = Date.now();
       sessionData = {
         courseSlug: selectedCourse.slug,
-        sessionQuestions: selectedQuestionIndices,
+        sessionQuestions: [], // No longer using indices
         selectedAnswers: {},
         isRanked: true,
         startTime
@@ -228,6 +218,26 @@ const QuestionsHub: React.FC = () => {
                   >
                     {course.code}
                   </div>
+                  {(() => {
+                    const cacheKey = `exam_cache_${course.slug.toLowerCase()}`;
+                    const cachedData = localStorage.getItem(cacheKey);
+                    if (!cachedData) return null;
+                    const cache = JSON.parse(cachedData);
+                    if (cache.isFullyCached) {
+                      return (
+                        <div className="flex items-center gap-1 text-[9px] font-black text-green-600 uppercase tracking-widest ml-3">
+                          <span className="material-symbols-outlined text-[12px]">verified</span>
+                          Fully Cached
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex items-center gap-1 text-[9px] font-bold text-[#d4aa37] uppercase tracking-widest ml-3">
+                        <span className="material-symbols-outlined text-[12px] animate-spin">sync</span>
+                        {cache.questions?.length || 0}/200
+                      </div>
+                    );
+                  })()}
                   {view === 'grid' && (
                     <span className="text-[9px] font-bold text-[#757c7d] tracking-wide">{course.questionCount} Questions</span>
                   )}
