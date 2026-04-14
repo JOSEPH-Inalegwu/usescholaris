@@ -11,13 +11,6 @@ const GreetingHeader: React.FC = () => {
   const displayName = profile?.name || user?.displayName || undefined;
   const firstName = useMemo(() => getFirstName(displayName), [displayName]);
 
-  const dailyReads = useMemo(() => {
-    if (!user) return 0;
-    const today = new Date().toLocaleDateString('en-CA');
-    const dailyReadsKey = `exam_daily_reads_${user.uid}_${today}`;
-    return parseInt(localStorage.getItem(dailyReadsKey) || '0');
-  }, [user]);
-
   if (loading) {
     return (
       <header className="mb-10 animate-pulse">
@@ -36,12 +29,6 @@ const GreetingHeader: React.FC = () => {
           </h2>
           <p className="text-[#5a6061] mt-2 font-medium tracking-wide">
             {subtext}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-sm border border-[#adb3b4]/20 shadow-sm self-start md:self-auto">
-          <span className="material-symbols-outlined text-[#d4aa37] text-sm">database</span>
-          <p className="text-[10px] font-bold text-[#5a6061] uppercase tracking-widest">
-            {dailyReads} of 5 Daily Fetches Used
           </p>
         </div>
       </div>

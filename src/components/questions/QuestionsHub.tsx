@@ -21,8 +21,15 @@ const QuestionsHub: React.FC = () => {
   const { profile } = useAuth();
   const { saveSession, getSession } = useSessionPersistence();
 
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [_loading, setLoading] = useState(true);
+  // 1. Initialize from Cache immediately for Zero Latency
+  const [courses, setCourses] = useState<Course[]>(() => {
+    const cached = localStorage.getItem('scholaris_courses_cache');
+    return cached ? JSON.parse(cached) : [];
+  });
+  
+  // 2. Only show loading if we have absolutely no data
+  const [loading, setLoading] = useState(courses.length === 0);
+  
   const [semester, setSemester] = useState<1 | 2>(1);
   const [mode, setMode] = useState<'prep' | 'past'>('prep');
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,14 +49,17 @@ const QuestionsHub: React.FC = () => {
             code: data.code || slug.toUpperCase(),
             title: data.title || `Course: ${slug.toUpperCase()}`,
             semester: data.semester || 1, 
-            level: data.level || '', // Keep empty if missing to allow flexible filtering
+            level: data.level || '',
             faculty: data.faculty || 'General Studies',
             department: data.department || 'All',
             questionCount: data.totalQuestions || 0,
             lastUpdated: data.lastUpdated?.split('T')[0] || new Date().toISOString().split('T')[0]
           } as Course;
         });
+
+        // Update state and persistent cache
         setCourses(courseData);
+        localStorage.setItem('scholaris_courses_cache', JSON.stringify(courseData));
       } catch (err) {
         console.error('Error fetching courses:', err);
       } finally {

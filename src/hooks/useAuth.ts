@@ -10,6 +10,7 @@ export interface UserStats {
   totalAttempts: number;
   streakCount?: number;
   lastActivityDate?: string; // YYYY-MM-DD
+  lastExamCompleted?: string; // ISO String or YYYY-MM-DD
   activityLog?: Record<string, number>;
   courseActivity?: Record<string, number>;
   achievements?: string[];

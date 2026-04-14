@@ -5,7 +5,7 @@ import { type Question } from '../../types/question';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../lib/firebase/firebase';
 import { useAuth } from '../../hooks/useAuth';
-import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc, increment, arrayUnion, query, where, limit, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, arrayUnion, query, where, limit, getDocs } from 'firebase/firestore';
 import { checkAchievements } from '../../lib/utils/achievements';
 import QuestionCard from './QuestionCard';
 
@@ -127,7 +127,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
     }
   }, [initialQuestions, session.courseSlug, user?.uid, navigate]);
 
-  const handleSubmission = useCallback(async (finalAnswers: Record<number, string | number>) => {
+  const handleSubmission = useCallback(async (finalAnswers: Record<number, string | number>, isManual: boolean = false) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -183,7 +183,9 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
       if (user?.uid) {
         const todayStr = new Date().toLocaleDateString('en-CA');
         const prevDate = profile?.stats?.lastActivityDate;
-        const isFullExam = Object.keys(finalAnswers).length === questions.length;
+        
+        // STREAK LOGIC: Manual submission AND all 40 questions answered
+        const isFullExam = isManual && Object.keys(finalAnswers).length === 40;
 
         const pct = (correct / questions.length) * 100;
         if (pct < 50) note = "Good attempt! Let's focus on reviewing the key concepts before jumping back in. You've got this!";
@@ -217,6 +219,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
 
         if (isFullExam) {
           updatePayload['stats.lastActivityDate'] = todayStr;
+          updatePayload['stats.lastExamCompleted'] = new Date().toISOString();
 
           if (!prevDate) {
             updatePayload['stats.streakCount'] = 1;
@@ -354,7 +357,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
               {formatTime(timeLeft)}
             </div>
             <button
-              onClick={() => handleSubmission(answers)}
+              onClick={() => handleSubmission(answers, true)}
               disabled={isSubmitting}
               className="px-6 md:px-8 py-3 bg-[#b32839] text-white text-[12px] font-bold rounded-sm hover:opacity-90 transition-all disabled:opacity-50 whitespace-nowrap"
             >
@@ -416,7 +419,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
             </button>
             <span className="text-[10px] font-bold text-[#adb3b4] md:hidden">{currentIdx + 1} / {totalQuestionCount}</span>
             <button
-              onClick={() => currentIdx === totalQuestionCount - 1 ? handleSubmission(answers) : setCurrentIdx(currentIdx + 1)}
+              onClick={() => currentIdx === totalQuestionCount - 1 ? handleSubmission(answers, true) : setCurrentIdx(currentIdx + 1)}
               disabled={isSubmitting}
               className={`flex items-center gap-1.5 px-6 py-3 text-[12px] font-bold text-white rounded-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 ${currentIdx === totalQuestionCount - 1 ? 'bg-[#b32839]' : 'bg-[#2a2d2e]'
                 }`}

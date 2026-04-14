@@ -25,7 +25,7 @@ export const useDashboardStats = (): DashboardStats => {
     const deptKey = profile?.department?.toLowerCase() ?? '';
     const levelKey = profile?.level?.replace(/\s+level/i, '').trim() ?? '';
     const courseCount = DEPARTMENT_MAP[deptKey]?.[levelKey] ?? 9;
-    const semesterTarget = courseCount * 100;
+    const semesterTarget = courseCount * 200;
 
     if (!s?.totalAttempts) {
       return {

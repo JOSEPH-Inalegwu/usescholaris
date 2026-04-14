@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from '../../layouts/DashboardLayout'
+import { useStreakValidation } from '../../hooks'
 import {
   GreetingHeader,
   ActiveSessionHero,
@@ -11,6 +12,7 @@ import { DashboardSkeleton } from '../../components/ui'
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
+  useStreakValidation();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1500);
