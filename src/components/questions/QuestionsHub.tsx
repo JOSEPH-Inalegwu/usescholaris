@@ -28,7 +28,7 @@ const QuestionsHub: React.FC = () => {
   });
   
   // 2. Only show loading if we have absolutely no data
-  const [loading, setLoading] = useState(courses.length === 0);
+  const [, setLoading] = useState(courses.length === 0);
   
   const [semester, setSemester] = useState<1 | 2>(1);
   const [mode, setMode] = useState<'prep' | 'past'>('prep');
