@@ -66,10 +66,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose })
       </nav>
 
       <div className="mt-auto px-4 space-y-1 pt-4 border-t border-[#adb3b4]/10">
-        <button className="w-full text-[#5a6061] hover:bg-[#ebeeef]/50 px-4 py-3 rounded-lg flex items-center gap-3 transition-colors">
-          <span className="material-symbols-outlined text-[22px]">dark_mode</span>
-          <span className="text-sm">Dark Mode</span>
-        </button>
         <Link 
           to="/settings"
           onClick={() => isDrawer && onClose?.()}
