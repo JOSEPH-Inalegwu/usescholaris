@@ -5,7 +5,7 @@ import { useSessionPersistence } from '../../hooks/useSessionPersistence';
 import { type Course } from '../../types/question';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../../lib/firebase/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import PreExamModal from './PreExamModal';
 
 const goldPalette = { primary: '#d4aa37ff', dark: '#cf6b19ff', accent: '#b32839' };
@@ -31,19 +31,20 @@ const QuestionsHub: React.FC = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'course_metadata'));
+        const q = query(collection(db, 'course_metadata'), where('isActive', '==', true));
+        const querySnapshot = await getDocs(q);
         const courseData = querySnapshot.docs.map(doc => {
           const data = doc.data();
           const slug = doc.id;
           return {
             id: doc.id,
             slug: slug,
-            code: slug.toUpperCase(),
-            title: `Course: ${slug.toUpperCase()}`,
-            semester: 1, // Defaulting as we now fetch metadata
-            level: '100',
-            faculty: 'Science',
-            department: 'GST',
+            code: data.code || slug.toUpperCase(),
+            title: data.title || `Course: ${slug.toUpperCase()}`,
+            semester: data.semester || 1, 
+            level: data.level || '', // Keep empty if missing to allow flexible filtering
+            faculty: data.faculty || 'General Studies',
+            department: data.department || 'All',
             questionCount: data.totalQuestions || 0,
             lastUpdated: data.lastUpdated?.split('T')[0] || new Date().toISOString().split('T')[0]
           } as Course;
@@ -56,7 +57,7 @@ const QuestionsHub: React.FC = () => {
       }
     };
     fetchCourses();
-  }, []);
+  }, [profile]);
 
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,15 +65,46 @@ const QuestionsHub: React.FC = () => {
 
   const filteredCourses = useMemo(() => {
     return courses.filter(course => {
+      // 1. Semester Match
       const isSemMatch = Number(course.semester) === Number(semester);
-      const isLevelMatch = String(course.level).includes(String(profile?.level || '')) || String(profile?.level).includes(String(course.level));
-      const isDeptMatch =
-        course.department === 'All' ||
-        (DEPARTMENT_MAP[course.department.toLowerCase()] ?? []).includes(
-          profile?.department?.toLowerCase() ?? ''
-        );
+      
+      // 2. Level Match (Flexible matching)
+      const userLevel = String(profile?.level || '').toLowerCase();
+      const courseLevel = String(course.level || '').toLowerCase();
+      
+      // Allow match if:
+      // - User has no level set
+      // - Course has no level set (visible to all)
+      // - Course level is 'all'
+      // - Course level includes user level (e.g. '100,200' includes '100')
+      // - User level includes course level (e.g. '100' includes '100')
+      const isLevelMatch = !userLevel || 
+                          !courseLevel || 
+                          courseLevel === 'all' || 
+                          courseLevel.includes(userLevel) || 
+                          userLevel.includes(courseLevel);
+      
+      // 3. Department Match
+      const userDept = profile?.department?.toLowerCase() || '';
+      const courseDept = course.department?.toLowerCase() || 'all';
+      const isDeptMatch = courseDept === 'all' || 
+                         (DEPARTMENT_MAP[courseDept] ?? []).includes(userDept) ||
+                         courseDept.includes(userDept) ||
+                         userDept.includes(courseDept);
 
-      return isSemMatch && isLevelMatch && isDeptMatch;
+      // 4. Search Match
+      const search = searchQuery.toLowerCase().trim();
+      const isSearchMatch = !search || 
+                           course.code.toLowerCase().includes(search) || 
+                           course.title.toLowerCase().includes(search);
+
+      const result = isSemMatch && isLevelMatch && isDeptMatch && isSearchMatch;
+      
+      if (!result) {
+        console.log(`Course ${course.code} filtered out:`, { isSemMatch, isLevelMatch, isDeptMatch, isSearchMatch });
+      }
+      
+      return result;
     });
   }, [semester, profile, searchQuery, courses]);
 

@@ -29,15 +29,17 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!initialQuestions) {
+    if (!initialQuestions && user?.uid) {
       const fetchQuestions = async () => {
         try {
+          console.log(`Starting fetch for course: ${session.courseSlug} for user: ${user.uid}`);
           const cacheKey = `exam_cache_${session.courseSlug.toLowerCase()}`;
           const cachedData = localStorage.getItem(cacheKey);
           let cache = cachedData ? JSON.parse(cachedData) : { questions: [], fetchCount: 0, isFullyCached: false };
 
           // 1. If fully cached, serve 40 random from local storage (Zero Cost)
           if (cache.isFullyCached && cache.questions.length >= 40) {
+            console.log("Serving from local cache");
             const shuffled = [...cache.questions].sort(() => 0.5 - Math.random());
             setQuestions(shuffled.slice(0, 40));
             setLoading(false);
@@ -50,6 +52,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
           const dailyReads = parseInt(localStorage.getItem(dailyReadsKey) || '0');
 
           if (dailyReads >= 5) {
+            console.log("Daily read limit reached");
             setQuestions([]);
             setLoading(false);
             alert("You have used all 5 fetches today. You can still practice fully cached courses. New courses will unlock tomorrow.");
@@ -60,6 +63,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
           // 3. Otherwise, fetch from Firebase
           const questionsCol = collection(db, 'questions');
           const randomVal = Math.random();
+          console.log(`Fetching from Firestore with randomId >= ${randomVal}`);
           
           const q1 = query(
             questionsCol,
@@ -70,9 +74,11 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
           
           const snapshot1 = await getDocs(q1);
           let fetchedDocs = snapshot1.docs.map(d => ({ id: d.id, ...d.data() } as Question));
+          console.log(`Initial fetch returned ${fetchedDocs.length} questions`);
 
           if (fetchedDocs.length < 40) {
             const remaining = 40 - fetchedDocs.length;
+            console.log(`Fetching remaining ${remaining} questions from randomId < ${randomVal}`);
             const q2 = query(
               questionsCol,
               where('courseSlug', '==', session.courseSlug.toLowerCase()),
@@ -82,6 +88,11 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
             const snapshot2 = await getDocs(q2);
             const fallbackDocs = snapshot2.docs.map(d => ({ id: d.id, ...d.data() } as Question));
             fetchedDocs = [...fetchedDocs, ...fallbackDocs];
+            console.log(`Total questions after fallback: ${fetchedDocs.length}`);
+          }
+
+          if (fetchedDocs.length === 0) {
+            console.warn("No questions found for slug:", session.courseSlug);
           }
 
           // 4. Increment Daily Reads counter
@@ -286,8 +297,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
   };
 
   const handleAnswerSelect = (option: string) => {
-    const currentQId = questions[currentIdx].id;
-    const newAnswers = { ...answers, [currentQId]: option };
+    const newAnswers = { ...answers, [currentIdx]: option };
     setAnswers(newAnswers);
     if (autoNext && currentIdx < questions.length - 1) {
       setTimeout(() => setCurrentIdx(prev => prev + 1), 250);
@@ -295,10 +305,9 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
   };
 
   const toggleFlag = () => {
-    const currentQId = questions[currentIdx].id;
     const newFlagged = new Set(flagged);
-    if (newFlagged.has(currentQId)) newFlagged.delete(currentQId);
-    else newFlagged.add(currentQId);
+    if (newFlagged.has(currentIdx)) newFlagged.delete(currentIdx);
+    else newFlagged.add(currentIdx);
     setFlagged(newFlagged);
   };
 

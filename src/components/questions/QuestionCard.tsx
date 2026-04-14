@@ -10,6 +10,12 @@ interface QuestionCardProps {
 const QuestionCard: React.FC<QuestionCardProps> = ({ question, selectedAnswer, onAnswerSelect }) => {
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <h2 className="text-lg md:text-xl font-bold text-[#2a2d2e] leading-relaxed">
+          {question?.question}
+        </h2>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {question?.options?.map((option, i) => {
           const isSelected = selectedAnswer === option;
