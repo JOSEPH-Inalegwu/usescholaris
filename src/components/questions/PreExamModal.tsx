@@ -43,7 +43,7 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative bg-white w-full max-w-lg rounded-sm overflow-hidden shadow-2xl border border-[#adb3b4]/20"
+            className="relative bg-white w-full max-w-md rounded-sm overflow-hidden shadow-2xl border border-[#adb3b4]/20"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Top banner */}
@@ -53,8 +53,8 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
             </div>
 
             {/* Header */}
-            <div className="p-6 border-b border-[#adb3b4]/10">
-              <div className="flex justify-between items-start mb-2">
+            <div className="p-4 border-b border-[#adb3b4]/10">
+              <div className="flex justify-between items-start mb-1">
                 <div
                   className="px-2 py-0.5 rounded-sm text-[9px] font-bold text-white uppercase tracking-wider"
                   style={{ backgroundColor: goldPalette.primary }}
@@ -68,14 +68,14 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
                   close
                 </button>
               </div>
-              <h2 className="text-xl font-bold text-[#2a2d2e]">{course.title}</h2>
+              <h2 className="text-lg font-bold text-[#2a2d2e]">{course.title}</h2>
               <p className="text-[#757c7d] text-xs mt-1">
                 {isResuming ? 'You have an unfinished session — pick up where you left off.' : 'Read the instructions below before you begin.'}
               </p>
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-6">
+            <div className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-[#f2f4f4] px-4 py-3 rounded-sm border border-[#adb3b4]/20 flex items-center gap-3">
                   <span className="material-symbols-outlined text-base text-[#b32839]">format_list_numbered</span>
@@ -94,7 +94,7 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
               </div>
 
               {/* Rules */}
-              <div className="bg-[#b32839]/5 p-4 rounded-sm border border-[#b32839]/10 space-y-3">
+              <div className="bg-[#b32839]/5 p-3 rounded-sm border border-[#b32839]/10 space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-sm text-[#b32839]">info</span>
                   <h3 className="font-bold text-[#b32839] text-[9px] uppercase tracking-wider">Before You Start</h3>
@@ -137,7 +137,7 @@ const PreExamModal: React.FC<PreExamModalProps> = ({ isOpen, onClose, onConfirm,
             </div>
 
             {/* Footer */}
-            <div className="p-6 bg-[#f9f9f9] border-t border-[#adb3b4]/10 flex gap-4">
+            <div className="p-4 bg-[#f9f9f9] border-t border-[#adb3b4]/10 flex gap-3">
               <button
                 onClick={onClose}
                 className="flex-1 py-3 rounded-sm text-[10px] font-bold text-[#757c7d] hover:bg-[#ebeeef] transition-colors uppercase tracking-widest border border-[#adb3b4]/20"
