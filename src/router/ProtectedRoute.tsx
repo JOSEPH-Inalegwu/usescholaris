@@ -4,6 +4,18 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { auth, db } from '../lib/firebase/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { PostHogProvider } from 'posthog-js/react';
+import { usePostHog } from 'posthog-js/react';
+
+const PostHogInit = ({ children }: { children: ReactNode }) => {
+  const postHog = usePostHog();
+  useEffect(() => {
+    if (postHog) {
+      postHog.capture('page_view');
+    }
+  }, [postHog]);
+  return <>{children}</>;
+};
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -87,5 +99,15 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <PostHogProvider
+      apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN}
+      options={{
+        api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
+        defaults: '2026-01-30',
+      } as const}
+    >
+      <PostHogInit>{children}</PostHogInit>
+    </PostHogProvider>
+  );
 };

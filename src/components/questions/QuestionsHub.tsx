@@ -6,6 +6,7 @@ import { type Course } from '../../types/question';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../../lib/firebase/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { usePostHog } from 'posthog-js/react';
 import PreExamModal from './PreExamModal';
 
 const goldPalette = { primary: '#d4aa37ff', dark: '#cf6b19ff', accent: '#b32839' };
@@ -20,6 +21,11 @@ const QuestionsHub: React.FC = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { saveSession, getSession } = useSessionPersistence();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    posthog?.capture('questions_hub_loaded');
+  }, [posthog]);
 
   // 1. Initialize from Cache immediately for Zero Latency
   const [courses, setCourses] = useState<Course[]>(() => {

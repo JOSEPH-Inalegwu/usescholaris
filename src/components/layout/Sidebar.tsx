@@ -56,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose })
           >
             <span 
               className="material-symbols-outlined text-[22px]"
-              style={{ color: isActive(item.path) ? '#d4aa37' : 'inherit' }}
+              style={{ color: isActive(item.path) ? '#b32839' : 'inherit' }}
             >
               {item.icon}
             </span>
@@ -76,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose })
         >
           <span 
             className="material-symbols-outlined text-[22px]"
-            style={{ color: isActive('/settings') ? '#d4aa37' : 'inherit' }}
+            style={{ color: isActive('/settings') ? '#b32839' : 'inherit' }}
           >
             settings
           </span>

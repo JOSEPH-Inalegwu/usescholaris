@@ -181,12 +181,12 @@ export default function LoginPage() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                             <div className="space-y-1.5">
                                 <label className="block text-[11px] font-bold text-[#5a6061] uppercase tracking-widest ml-1" htmlFor="email">
-                                    Institutional Email
+                                    Email
                                 </label>
                                 <input
                                     id="email"
                                     type="email"
-                                    placeholder="scholar@university.edu"
+                                    placeholder="johndoe@gmail.com"
                                     {...register('email')}
                                     disabled={isLoading || isGoogleLoading}
                                     className="w-full px-4 py-3 bg-[#f9f9f9] border border-[#dde4e5] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2d3435]/10 focus:bg-white transition-all text-sm text-[#2d3435] placeholder:text-[#adb3b4]/60 disabled:opacity-60"
