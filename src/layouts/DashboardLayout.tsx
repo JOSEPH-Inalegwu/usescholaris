@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/layout';
+import { ChatWidget } from '../components/chat/ChatWidget';
+import DashboardHeader from '../components/dashboard/DashboardHeader';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface DashboardLayoutProps {
@@ -8,12 +11,19 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const location = useLocation();
+  const isExamActive = location.pathname.startsWith('/exam/');
+
+  const handleMenuClick = useCallback(() => {
+    setIsSidebarOpen(true);
+  }, []);
 
   return (
     <div className="bg-[#f9f9f9] text-[#2d3435] min-h-screen font-['Merriweather'] flex">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block w-64 flex-shrink-0">
-        <Sidebar isOpen={true} isDrawer={false} />
+        <Sidebar isOpen={true} isDrawer={false} onChatOpen={() => setIsChatOpen(true)} />
       </div>
 
       {/* Mobile Drawer */}
@@ -30,23 +40,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <Sidebar 
               isOpen={isSidebarOpen} 
               isDrawer={true} 
-              onClose={() => setIsSidebarOpen(false)} 
+              onClose={() => setIsSidebarOpen(false)}
+              onChatOpen={() => setIsChatOpen(true)}
             />
           </>
         )}
       </AnimatePresence>
 
+      {/* Chat Widget */}
+      {!isExamActive && <ChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />}
+
       <main className="flex-1 min-h-screen relative flex flex-col min-w-0">
-        {/* Floating Hamburger for Mobile - now that TopAppBar is gone */}
-        <button 
-          onClick={() => setIsSidebarOpen(true)}
-          className="lg:hidden fixed top-4 left-4 p-3 rounded-full bg-white/80 backdrop-blur-md shadow-sm border border-[#adb3b4]/20 z-[40] hover:bg-[#ebeeef] transition-colors"
-          style={{ color: '#d4aa37ff' }}
-        >
-          <span className="material-symbols-outlined text-2xl">menu</span>
-        </button>
-        
-        <div className="pt-20 lg:pt-8 p-4 md:p-8 flex-1 overflow-x-hidden">
+        <DashboardHeader onMenuClick={handleMenuClick} />
+        <div className="flex-1 overflow-x-hidden">
           {children}
         </div>
       </main>

@@ -29,7 +29,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto w-full p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1">
           {/* Left Column */}
           <div className="lg:col-span-8 space-y-8">

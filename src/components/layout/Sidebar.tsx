@@ -8,9 +8,10 @@ interface SidebarProps {
   isOpen?: boolean;
   isDrawer?: boolean;
   onClose?: () => void;
+  onChatOpen?: () => void; // reserved for future Help Chat feature
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose, onChatOpen: _onChatOpen }) => {
   const location = useLocation();
   const { profile, user, loading } = useAuth();
 
@@ -82,6 +83,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose })
           </span>
           <span className="text-sm">Settings</span>
         </Link>
+
+        {/* Help Chat - disabled for now */}
+        {/* 
+        <button 
+          onClick={() => {
+            if (isDrawer) {
+              onClose?.();
+              onChatOpen?.();
+            } else {
+              onChatOpen?.();
+            }
+          }}
+          className="w-full text-[#5a6061] hover:bg-[#ebeeef]/50 px-4 py-3 rounded-lg flex items-center gap-3 transition-colors active:scale-[0.98]"
+        >
+          <span className="material-symbols-outlined text-[22px]" style={{ color: '#b32839' }}>
+            chat
+          </span>
+          <span className="text-sm">Help Chat</span>
+        </button> 
+        */}
 
         <div className="mt-6 px-2 py-4 flex items-center gap-3 bg-[#f2f4f4]/50 rounded-xl">
           {loading ? (
