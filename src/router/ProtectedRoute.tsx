@@ -9,11 +9,14 @@ import { usePostHog } from 'posthog-js/react';
 
 const PostHogInit = ({ children }: { children: ReactNode }) => {
   const postHog = usePostHog();
+  const location = useLocation();
+  
   useEffect(() => {
     if (postHog) {
       postHog.capture('page_view');
     }
-  }, [postHog]);
+  }, [postHog, location]);
+  
   return <>{children}</>;
 };
 
