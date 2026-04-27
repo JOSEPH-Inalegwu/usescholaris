@@ -19,7 +19,7 @@ const LeaderboardUserRank: React.FC<LeaderboardUserRankProps> = ({ rank, userSta
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: 'spring', damping: 20, stiffness: 100, delay: 1 }}
-        className="pointer-events-auto bg-[#2d3435]/95 backdrop-blur-xl text-white px-6 py-4 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 flex items-center gap-8 max-w-2xl w-full"
+        className="pointer-events-auto bg-white text-[#2d3435] px-6 py-4 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/10 flex items-center gap-8 max-w-xl w-full"
       >
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -29,34 +29,34 @@ const LeaderboardUserRank: React.FC<LeaderboardUserRankProps> = ({ rank, userSta
               size="lg" 
               className="ring-2 ring-[#d4aa37] shadow-lg"
             />
-            <div className="absolute -bottom-1 -right-1 bg-[#d4aa37] text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-[#2d3435]">
+            <div className="absolute -bottom-1 -right-1 bg-[#d4aa37] text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-white">
               #{rank}
             </div>
           </div>
           <div>
-            <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] font-['Lora']">Your Standing</p>
+            <p className="text-[9px] font-black text-black/40 uppercase tracking-[0.2em] font-['Lora']">Your Standing</p>
             <h4 className="font-black text-sm font-['Lora'] tracking-tight whitespace-nowrap">
               {profile?.name?.split(' ')[0] || user?.displayName?.split(' ')[0]}
             </h4>
           </div>
         </div>
         
-        <div className="h-8 w-[1px] bg-white/10 hidden sm:block" />
+        <div className="h-8 w-[1px] bg-black/10 hidden sm:block" />
 
         <div className="flex-1 flex justify-around items-center gap-4 sm:gap-8">
           <div className="text-center">
-            <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] font-['Lora']">Last 5 Avg</p>
-            <p className="text-lg font-black font-['Lora'] text-[#d4aa37]">{userStats?.last5Avg ?? '--'}%</p>
+            <p className="text-[9px] font-black text-black/40 uppercase tracking-[0.2em] font-['Lora']">Last 5 Avg</p>
+            <p className="text-lg font-black font-['Lora'] text-[#b32839]">{userStats?.last5Avg ?? '--'}%</p>
           </div>
           
           <div className="text-center">
-            <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] font-['Lora']">Exams Taken</p>
-            <p className="text-lg font-black font-['Lora'] text-white">{userStats?.examsTaken ?? '--'}</p>
+            <p className="text-[9px] font-black text-black/40 uppercase tracking-[0.2em] font-['Lora']">Exams Taken</p>
+            <p className="text-lg font-black font-['Lora'] text-[#2d3435]">{userStats?.examsTaken ?? '--'}</p>
           </div>
           
           <div className="text-center">
-            <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] font-['Lora']">Level</p>
-            <p className="text-lg font-black font-['Lora'] text-white">{profile?.level || '1'} Level</p>
+            <p className="text-[9px] font-black text-black/40 uppercase tracking-[0.2em] font-['Lora']">Level</p>
+            <p className="text-lg font-black font-['Lora'] text-[#2d3435]">{(profile?.level || '1').replace(' Level', '')}</p>
           </div>
         </div>
 

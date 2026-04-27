@@ -49,7 +49,7 @@ const LeaderboardList: React.FC<LeaderboardListProps> = ({ entries, currentUserI
 <p className={`text-[9px] font-bold uppercase tracking-widest truncate ${
                   entry.userId === currentUserId ? 'text-white/70' : 'text-[#5a6061]'
                 }`}>
-                  {entry.level} Level • {entry.department}
+                  {entry.level.replace(' Level', '')} Level • {entry.department}
                 </p>
             </div>
           </div>
