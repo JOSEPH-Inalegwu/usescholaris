@@ -5,7 +5,7 @@ import { type Question } from '../../types/question';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../lib/firebase/firebase';
 import { useAuth } from '../../hooks/useAuth';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, arrayUnion, query, where, limit, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, increment, arrayUnion, query, where, orderBy, limit as firestoreLimit, getDocs } from 'firebase/firestore';
 import { checkAchievements } from '../../lib/utils/achievements';
 import QuestionCard from './QuestionCard';
 
@@ -19,113 +19,142 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
   const navigate = useNavigate();
   const { user, profile } = useAuth();
 
-  const [questions, setQuestions] = useState<Question[]>(initialQuestions || []);
-  const [loading, setLoading] = useState(!initialQuestions);
+  // sessionQuestions passed from the limit screen's "cached course" button
+  const sessionQuestions: Question[] = (session as any).sessionQuestions || initialQuestions || [];
+
+  const [questions, setQuestions] = useState<Question[]>(sessionQuestions);
+  const [loading, setLoading] = useState(sessionQuestions.length === 0);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string | number>>(session.selectedAnswers || {});
   const [flagged, setFlagged] = useState<Set<number>>(new Set());
   const [timeLeft, setTimeLeft] = useState(0);
   const [autoNext, setAutoNext] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fetchLimitReached, setFetchLimitReached] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
+
+const [cachedCourses, setCachedCourses] = useState<{ code: string; slug: string; questions: Question[] }[]>([]);
 
   useEffect(() => {
-    if (!initialQuestions && user?.uid) {
-      const fetchQuestions = async () => {
-        try {
-          console.log(`Starting fetch for course: ${session.courseSlug} for user: ${user.uid}`);
-          const cacheKey = `exam_cache_${session.courseSlug.toLowerCase()}`;
-          const cachedData = localStorage.getItem(cacheKey);
-          let cache = cachedData ? JSON.parse(cachedData) : { questions: [], fetchCount: 0, isFullyCached: false };
+    if (sessionQuestions.length > 0) {
+      setQuestions(sessionQuestions);
+      setLoading(false);
+      return;
+    }
 
-          // 1. If fully cached, serve 40 random from local storage (Zero Cost)
-          if (cache.isFullyCached && cache.questions.length >= 40) {
-            console.log("Serving from local cache");
-            const shuffled = [...cache.questions].sort(() => 0.5 - Math.random());
-            setQuestions(shuffled.slice(0, 40));
-            setLoading(false);
-            return;
+    if (!user?.uid) return;
+
+    const fetchQuestions = async () => {
+      try {
+        console.log(`Starting fetch for course: ${session.courseSlug} for user: ${user.uid}`);
+        const cacheKey = `exam_cache_${session.courseSlug.toLowerCase()}`;
+        const cachedData = localStorage.getItem(cacheKey);
+        const cache = cachedData ? JSON.parse(cachedData) : { questions: [], fetchCount: 0, isFullyCached: false };
+
+        // 1. If fully cached, serve 40 random from local storage (Zero Cost)
+        if (cache.isFullyCached && cache.questions.length >= 40) {
+          console.log("Serving from local cache");
+          const shuffled = [...cache.questions].sort(() => 0.5 - Math.random());
+          setQuestions(shuffled.slice(0, 40));
+          setLoading(false);
+          return;
+        }
+
+        // 2. Check Daily Read Limit (Only for Firebase fetches)
+        const today = new Date().toLocaleDateString('en-CA');
+        const dailyReadsKey = `exam_daily_reads_${user?.uid}_${today}`;
+        const dailyReads = parseInt(localStorage.getItem(dailyReadsKey) || '0');
+
+        if (dailyReads >= 10) {
+          console.log("Daily read limit reached");
+          setQuestions([]);
+          setLoading(false);
+          setFetchLimitReached(true);
+          const coursesCache = localStorage.getItem('scholaris_courses_cache');
+          if (coursesCache) {
+            const allCourses = JSON.parse(coursesCache);
+            const fullyCached = allCourses
+              .filter((c: any) => {
+                const cKey = `exam_cache_${c.slug.toLowerCase()}`;
+                const cData = localStorage.getItem(cKey);
+                return cData && JSON.parse(cData).isFullyCached && JSON.parse(cData).questions?.length >= 40;
+              })
+              .map((c: any) => {
+                const cKey = `exam_cache_${c.slug.toLowerCase()}`;
+                const cData = JSON.parse(localStorage.getItem(cKey)!);
+                const shuffled = [...cData.questions].sort(() => 0.5 - Math.random());
+                return { code: c.code, slug: c.slug, questions: shuffled.slice(0, 40) };
+              });
+            setCachedCourses(fullyCached);
           }
+          return;
+        }
 
-          // 2. Check Daily Read Limit (Only for Firebase fetches)
-          const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
-          const dailyReadsKey = `exam_daily_reads_${user?.uid}_${today}`;
-          const dailyReads = parseInt(localStorage.getItem(dailyReadsKey) || '0');
+        // 3. Otherwise, fetch from Firebase
+        const questionsCol = collection(db, 'questions');
+        const randomVal = Math.random();
+        console.log(`Fetching from Firestore with randomId >= ${randomVal}`);
 
-          if (dailyReads >= 5) {
-            console.log("Daily read limit reached");
-            setQuestions([]);
-            setLoading(false);
-            alert("You have used all 5 fetches today. You can still practice fully cached courses. New courses will unlock tomorrow.");
-            navigate('/dashboard');
-            return;
-          }
+        const q1 = query(
+          questionsCol,
+          where('courseSlug', '==', session.courseSlug.toLowerCase()),
+          where('randomId', '>=', randomVal),
+          firestoreLimit(40)
+        );
 
-          // 3. Otherwise, fetch from Firebase
-          const questionsCol = collection(db, 'questions');
-          const randomVal = Math.random();
-          console.log(`Fetching from Firestore with randomId >= ${randomVal}`);
-          
-          const q1 = query(
+        const snapshot1 = await getDocs(q1);
+        let fetchedDocs = snapshot1.docs.map(d => ({ id: d.id, ...d.data() } as Question));
+        console.log(`Initial fetch returned ${fetchedDocs.length} questions`);
+
+        if (fetchedDocs.length < 40) {
+          const remaining = 40 - fetchedDocs.length;
+          console.log(`Fetching remaining ${remaining} questions from randomId < ${randomVal}`);
+          const q2 = query(
             questionsCol,
             where('courseSlug', '==', session.courseSlug.toLowerCase()),
-            where('randomId', '>=', randomVal),
-            limit(40)
+            where('randomId', '<', randomVal),
+            firestoreLimit(remaining)
           );
-          
-          const snapshot1 = await getDocs(q1);
-          let fetchedDocs = snapshot1.docs.map(d => ({ id: d.id, ...d.data() } as Question));
-          console.log(`Initial fetch returned ${fetchedDocs.length} questions`);
-
-          if (fetchedDocs.length < 40) {
-            const remaining = 40 - fetchedDocs.length;
-            console.log(`Fetching remaining ${remaining} questions from randomId < ${randomVal}`);
-            const q2 = query(
-              questionsCol,
-              where('courseSlug', '==', session.courseSlug.toLowerCase()),
-              where('randomId', '<', randomVal),
-              limit(remaining)
-            );
-            const snapshot2 = await getDocs(q2);
-            const fallbackDocs = snapshot2.docs.map(d => ({ id: d.id, ...d.data() } as Question));
-            fetchedDocs = [...fetchedDocs, ...fallbackDocs];
-            console.log(`Total questions after fallback: ${fetchedDocs.length}`);
-          }
-
-          if (fetchedDocs.length === 0) {
-            console.warn("No questions found for slug:", session.courseSlug);
-          }
-
-          // 4. Increment Daily Reads counter
-          localStorage.setItem(dailyReadsKey, (dailyReads + 1).toString());
-
-          // Update Local Cache
-          const existingIds = new Set(cache.questions.map((q: any) => q.id));
-          const uniqueNewQuestions = fetchedDocs.filter(q => !existingIds.has(q.id));
-          
-          const updatedQuestions = [...cache.questions, ...uniqueNewQuestions];
-          const newFetchCount = cache.fetchCount + 1;
-          
-          const updatedCache = {
-            questions: updatedQuestions,
-            fetchCount: newFetchCount,
-            isFullyCached: newFetchCount >= 5 || updatedQuestions.length >= 200,
-            lastUpdated: Date.now()
-          };
-
-          localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
-
-          // Set questions for the current session
-          const shuffled = fetchedDocs.sort(() => 0.5 - Math.random());
-          setQuestions(shuffled);
-        } catch (err) {
-          console.error('Failed to fetch questions:', err);
-        } finally {
-          setLoading(false);
+          const snapshot2 = await getDocs(q2);
+          const fallbackDocs = snapshot2.docs.map(d => ({ id: d.id, ...d.data() } as Question));
+          fetchedDocs = [...fetchedDocs, ...fallbackDocs];
+          console.log(`Total questions after fallback: ${fetchedDocs.length}`);
         }
-      };
-      fetchQuestions();
-    }
-  }, [initialQuestions, session.courseSlug, user?.uid, navigate]);
+
+        if (fetchedDocs.length === 0) {
+          console.warn("No questions found for slug:", session.courseSlug);
+        }
+
+        // 4. Increment Daily Reads counter
+        localStorage.setItem(dailyReadsKey, (dailyReads + 1).toString());
+
+        // Update Local Cache
+        const existingIds = new Set(cache.questions.map((q: any) => q.id));
+        const uniqueNewQuestions = fetchedDocs.filter(q => !existingIds.has(q.id));
+
+        const updatedQuestions = [...cache.questions, ...uniqueNewQuestions];
+        const newFetchCount = cache.fetchCount + 1;
+
+        const updatedCache = {
+          questions: updatedQuestions,
+          fetchCount: newFetchCount,
+          isFullyCached: newFetchCount >= 5 || updatedQuestions.length >= 200,
+          lastUpdated: Date.now()
+        };
+
+        localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
+
+        const shuffled = fetchedDocs.sort(() => 0.5 - Math.random());
+        setQuestions(shuffled);
+      } catch (err) {
+        console.error('Failed to fetch questions:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, [sessionQuestions.length, session.courseSlug, user?.uid, navigate]);
 
   const handleSubmission = useCallback(async (finalAnswers: Record<number, string | number>, isManual: boolean = false) => {
     if (isSubmitting) return;
@@ -195,7 +224,7 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
         const newAchievements = checkAchievements(profile?.stats || {}, { score: correct, total: questions.length, skipped }, categoryBreakdown);
 
         // Compute last5Avg from this user's last 5 exam attempts
-        const recentQ = query(
+const recentQ = query(
           collection(db, 'exam_attempts'),
           where('userId', '==', user.uid),
           orderBy('timestamp', 'desc'),
@@ -282,9 +311,16 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
         console.error('Stack trace:', err.stack);
       }
       setIsSubmitting(false);
-      alert('Something went wrong. Please try again.');
+      setSubmitError(true);
+      setTimeout(() => setSubmitError(false), 3000);
     }
   }, [clearSession, isSubmitting, navigate, questions, session.courseSlug, session.isRanked, session.startTime, user?.uid, profile?.stats?.lastActivityDate]);
+
+  useEffect(() => {
+    if (fetchLimitReached) {
+      setTimeout(() => setFetchLimitReached(false), 4000);
+    }
+  }, [fetchLimitReached]);
 
   useEffect(() => {
     const totalDuration = 30 * 60 * 1000;
@@ -339,6 +375,68 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-[#b32839]/20 border-t-[#b32839] rounded-full animate-spin" />
           <p className="text-[#757c7d] font-medium">Loading exam...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchLimitReached) {
+    return (
+      <div className="min-h-screen bg-[#f9f9f9] font-['Lora'] flex items-center justify-center p-4">
+        <div className="bg-white border border-[#adb3b4]/20 rounded-2xl p-8 max-w-md w-full text-center shadow-sm space-y-6">
+          <div className="w-14 h-14 bg-[#b32839]/5 rounded-full flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-3xl text-[#b32839]">schedule</span>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-black text-[#2a2d2e]">Daily Fetch Limit Reached</h2>
+            <p className="text-sm text-[#757c7d]">You have used all 5 Firestore reads for today. New courses unlock at midnight.</p>
+          </div>
+
+          {cachedCourses.length > 0 ? (
+            <div className="bg-[#f9f9f9] rounded-xl p-4 text-left space-y-2">
+              <p className="text-[10px] font-black text-[#757c7d] uppercase tracking-widest">Fully cached — study these now</p>
+              <div className="flex flex-wrap gap-2">
+                {cachedCourses.map(({ code, slug, questions }) => (
+                  <button
+                    key={code}
+                    onClick={() => navigate(`/exam/${slug}`, { state: { ...session, startTime: Date.now(), sessionQuestions: questions } })}
+                    className="px-4 py-2 bg-[#2a2d2e] text-white text-xs font-black rounded-full hover:bg-[#b32839] transition-all"
+                  >
+                    {code}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-[#f9f9f9] rounded-xl p-4">
+              <p className="text-sm text-[#757c7d]">No courses are fully cached yet. Once a course is fully cached, it will appear here and be available without Firestore reads.</p>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => navigate('/questions')}
+              className="flex-1 px-6 py-3 bg-[#f2f4f4] text-[#2a2d2e] text-sm font-bold rounded-xl hover:bg-[#e0e0e0] transition-all"
+            >
+              View All Courses
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="flex-1 px-6 py-3 bg-[#2a2d2e] text-white text-sm font-bold rounded-xl hover:bg-[#b32839] transition-all"
+            >
+              Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (submitError) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        <div className="bg-[#b32839] text-white px-8 py-5 rounded-2xl shadow-2xl text-sm font-bold max-w-sm text-center animate-pulse">
+          Something went wrong. Please try again.
         </div>
       </div>
     );

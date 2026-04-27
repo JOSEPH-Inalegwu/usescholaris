@@ -16,7 +16,6 @@ import { AdminGuard } from '../components/auth/AdminGuard';
 import { ExamPortal } from '../components/questions';
 import { useSessionPersistence, type ExamSession } from '../hooks/useSessionPersistence';
 
-// Placeholder components
 const CourseQuestions = () => <div className="p-4 font-['Lora']">Questions: Specific Course Page</div>;
 
 const ExamPage = () => {
@@ -34,7 +33,7 @@ const NotFound = () => <div className="p-4 font-['Lora']">404 Not Found</div>;
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/login" replace /> },
-  { path: '/login', element: <LoginPage /> },
+  { path: '/login', element: <RegisterPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/onboarding/level', element: <ProtectedRoute><LevelPage /></ProtectedRoute> },
   { path: '/onboarding/department', element: <ProtectedRoute><DepartmentPage /></ProtectedRoute> },
