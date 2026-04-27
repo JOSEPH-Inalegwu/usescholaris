@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks';
 import { getFirstName } from '../../lib/utils';
 import { motion } from 'framer-motion';
+import { Avatar } from '../ui';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -17,10 +18,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose, o
 
   const displayName = profile?.name || user?.displayName || undefined;
   const firstName = useMemo(() => getFirstName(displayName), [displayName]);
-  const initials = useMemo(() => {
-    if (!displayName) return 'S';
-    return displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  }, [displayName]);
 
   const menuItems = [
     { path: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
@@ -116,9 +113,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen: _isOpen, isDrawer, onClose, o
           ) : (
             <>
               <div className="relative">
-                <div className="w-10 h-10 rounded-full bg-[#2d3435] flex items-center justify-center text-white font-bold text-sm">
-                  {initials}
-                </div>
+                <Avatar 
+                  photoURL={user?.photoURL} 
+                  displayName={displayName} 
+                  size="md" 
+                />
                 {user && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#f2f4f4] rounded-full" />}
               </div>
               <div className="overflow-hidden">

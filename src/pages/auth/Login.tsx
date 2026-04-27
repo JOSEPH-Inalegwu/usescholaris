@@ -35,9 +35,12 @@ export default function LoginPage() {
         if (userDoc.exists()) {
             const userData = userDoc.data()
 
-            // Sync name if missing from Firestore but exists in Auth
-            if (!userData.name && displayName) {
-                await updateDoc(userDocRef, { name: displayName })
+            // Sync name and photoURL if missing from Firestore
+            const updates: Record<string, any> = {};
+            if (!userData.name && displayName) updates.name = displayName;
+            if (!userData.photoURL && user.photoURL) updates.photoURL = user.photoURL;
+            if (Object.keys(updates).length > 0) {
+                await updateDoc(userDocRef, updates);
             }
 
             if (userData.hasCompletedOnboarding) {
@@ -56,6 +59,7 @@ export default function LoginPage() {
                 uid,
                 name: displayName,
                 email,
+                photoURL: user.photoURL,
                 hasCompletedOnboarding: false,
                 onboardingStep: 0,
                 createdAt: serverTimestamp()

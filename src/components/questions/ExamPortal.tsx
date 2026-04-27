@@ -194,11 +194,30 @@ const ExamPortal: React.FC<ExamPortalProps> = ({ session, initialQuestions }) =>
 
         const newAchievements = checkAchievements(profile?.stats || {}, { score: correct, total: questions.length, skipped }, categoryBreakdown);
 
+        // Compute last5Avg from this user's last 5 exam attempts
+        const recentQ = query(
+          collection(db, 'exam_attempts'),
+          where('userId', '==', user.uid),
+          orderBy('timestamp', 'desc'),
+          firestoreLimit(5)
+        );
+        const recentSnap = await getDocs(recentQ);
+        const last5Pcts = recentSnap.docs.map(d => {
+          const a = d.data();
+          return Math.round(((a.score || 0) / (a.totalQuestions || 40)) * 100);
+        });
+        const last5Avg = last5Pcts.length > 0
+          ? Math.round(last5Pcts.reduce((s, p) => s + p, 0) / last5Pcts.length)
+          : Math.round(pct);
+        const questionsAttempted = (profile?.stats?.questionsAttempted || 0) + questions.length;
+
         let updatePayload: any = {
           'stats.totalPoints': increment(correct),
           'stats.totalQuestions': increment(questions.length),
           'stats.totalTime': increment(duration),
           'stats.totalAttempts': increment(1),
+          'stats.last5Avg': last5Avg,
+          'stats.questionsAttempted': questionsAttempted,
           [`stats.activityLog.${todayStr}`]: increment(questions.length),
           [`stats.courseActivity.${session.courseSlug}`]: increment(questions.length),
           'currentSession': {

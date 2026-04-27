@@ -6,6 +6,7 @@ import LevelPage from '../pages/onboarding/Level';
 import DepartmentPage from '../pages/onboarding/Department';
 import CompletePage from '../pages/onboarding/Complete';
 import DashboardPage from '../pages/dashboard/Dashboard';
+import LeaderboardPage from '../pages/leaderboard';
 import QuestionsPage from '../pages/questions';
 import ResultAnalysis from '../pages/questions/ResultAnalysis';
 import ReviewPage from '../pages/questions/ReviewPage';
@@ -16,7 +17,6 @@ import { ExamPortal } from '../components/questions';
 import { useSessionPersistence, type ExamSession } from '../hooks/useSessionPersistence';
 
 // Placeholder components
-const Leaderboard = () => <div className="p-4 font-['Lora']">Leaderboard Page</div>;
 const CourseQuestions = () => <div className="p-4 font-['Lora']">Questions: Specific Course Page</div>;
 
 const ExamPage = () => {
@@ -40,7 +40,7 @@ export const router = createBrowserRouter([
   { path: '/onboarding/department', element: <ProtectedRoute><DepartmentPage /></ProtectedRoute> },
   { path: '/onboarding/complete', element: <ProtectedRoute><CompletePage /></ProtectedRoute> },
   { path: '/dashboard', element: <ProtectedRoute><DashboardPage /></ProtectedRoute> },
-  { path: '/leaderboard', element: <ProtectedRoute><Leaderboard /></ProtectedRoute> },
+  { path: '/leaderboard', element: <ProtectedRoute><LeaderboardPage /></ProtectedRoute> },
   { path: '/questions', element: <ProtectedRoute><QuestionsPage /></ProtectedRoute> },
   { path: '/questions/:courseId', element: <ProtectedRoute><CourseQuestions /></ProtectedRoute> },
   { path: '/exam/:courseSlug', element: <ProtectedRoute><ExamPage /></ProtectedRoute> },

@@ -74,7 +74,7 @@ export default function RegisterPage() {
         try {
             const provider = new GoogleAuthProvider()
             const result = await signInWithPopup(auth, provider)
-            const { uid, displayName, email } = result.user
+            const { uid, displayName, email, photoURL } = result.user
 
             // Check if user document exists
             const userDocRef = doc(db, 'users', uid)
@@ -86,6 +86,7 @@ export default function RegisterPage() {
                     uid,
                     name: displayName,
                     email,
+                    photoURL: photoURL || null,
                     createdAt: serverTimestamp(),
                     hasCompletedOnboarding: false,
                     onboardingStep: 0

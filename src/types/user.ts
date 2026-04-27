@@ -8,4 +8,6 @@ export interface UserStats {
   activityLog: Record<string, number>;
   courseActivity: Record<string, number>;
   achievements: string[];
+  last5Avg: number;
+  questionsAttempted: number;
 }

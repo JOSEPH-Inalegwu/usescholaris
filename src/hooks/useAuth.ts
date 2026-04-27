@@ -6,14 +6,16 @@ import { doc, onSnapshot } from 'firebase/firestore';
 export interface UserStats {
   totalPoints: number;
   totalQuestions: number;
-  totalTime: number;   // milliseconds
+  totalTime: number;
   totalAttempts: number;
   streakCount?: number;
-  lastActivityDate?: string; // YYYY-MM-DD
-  lastExamCompleted?: string; // ISO String or YYYY-MM-DD
+  lastActivityDate?: string;
+  lastExamCompleted?: string;
   activityLog?: Record<string, number>;
   courseActivity?: Record<string, number>;
   achievements?: string[];
+  last5Avg?: number;
+  questionsAttempted?: number;
 }
 
 export interface UserProfile {
