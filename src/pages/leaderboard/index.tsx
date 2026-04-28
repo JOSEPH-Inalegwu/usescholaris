@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useLeaderboard } from '../../hooks/useLeaderboard';
-import { getFirstName } from '../../lib/utils';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { 
   LeaderboardPodium, 
@@ -17,12 +16,8 @@ export default function LeaderboardPage() {
     { faculty: profile?.faculty, department: profile?.department, level: profile?.level }
   );
 
-  const firstName = useMemo(() => getFirstName(profile?.name || user?.displayName), [profile?.name, user?.displayName]);
-
   const topThree = useMemo(() => entries.slice(0, 3), [entries]);
   const restOfEntries = useMemo(() => entries.slice(3), [entries]);
-  
-  const userEntry = useMemo(() => entries.find(e => e.userId === user?.uid), [entries, user?.uid]);
 
   if (loading) {
     return (

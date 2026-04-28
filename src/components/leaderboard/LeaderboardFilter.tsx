@@ -53,6 +53,7 @@ const LeaderboardFilters: React.FC<LeaderboardFilterProps> = ({ currentFilter, o
           </button>
         );
       })}
+      </div>
     </div>
   );
 };

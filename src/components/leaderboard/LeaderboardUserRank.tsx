@@ -56,7 +56,7 @@ const LeaderboardUserRank: React.FC<LeaderboardUserRankProps> = ({ rank, userSta
           <div className="relative">
             <Avatar
               photoURL={user?.photoURL}
-              displayName={profile?.name || user?.displayName}
+              displayName={profile?.name || user?.displayName || undefined}
               size="lg"
               className="ring-2 ring-[#d4aa37] shadow-lg"
             />

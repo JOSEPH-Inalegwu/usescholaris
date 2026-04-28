@@ -9,7 +9,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error('useToast must be used inside ToastProvider');
-  return ctx;
+  return ctx.toast;
 }
 
 interface ToastProviderProps {
@@ -19,7 +19,7 @@ interface ToastProviderProps {
 export function ToastProvider({ children }: ToastProviderProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [type, setType] = useState<'error' | 'success' | 'info'>('info');
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const toast = useCallback((msg: string, t: 'error' | 'success' | 'info' = 'info') => {
     clearTimeout(timerRef.current);

@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
+// @ts-ignore - LoginPage kept for future unified auth page
 import LoginPage from '../pages/auth/Login';
 import RegisterPage from '../pages/auth/Register';
 import LevelPage from '../pages/onboarding/Level';
@@ -33,7 +34,7 @@ const NotFound = () => <div className="p-4 font-['Lora']">404 Not Found</div>;
 
 export const router = createBrowserRouter([
   { path: '/', element: <Navigate to="/login" replace /> },
-  { path: '/login', element: <RegisterPage /> },
+  { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/onboarding/level', element: <ProtectedRoute><LevelPage /></ProtectedRoute> },
   { path: '/onboarding/department', element: <ProtectedRoute><DepartmentPage /></ProtectedRoute> },
